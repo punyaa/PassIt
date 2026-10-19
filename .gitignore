@@ -1,10 +1,42 @@
+# Dependencies
 node_modules/
+web/node_modules/
+
+# Local configuration and secrets
 .env
 .env.*
 !.env.example
-.DS_Store
+
+# Test and build output
 coverage/
 dist/
+build/
+.next/
+web/.next/
+*.egg-info/
+*.tsbuildinfo
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
 data/*.json
 !data/.gitkeep
 
+# Logs and local runtime files
+*.log
+*.pid
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+
+# Infrastructure state
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Local artifacts
+tmp/
+output/

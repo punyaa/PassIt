@@ -1,0 +1,78 @@
+name: passit
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-passit}
+      POSTGRES_USER: ${POSTGRES_USER:-passit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-passit}
+    ports:
+      - "5432:5432"
+    volumes:
+      - passit-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-passit} -d ${POSTGRES_DB:-passit}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./api
+    command: ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+    environment:
+      PASSIT_ENV: ${PASSIT_ENV:-development}
+      PASSIT_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-passit}:${POSTGRES_PASSWORD:-passit}@postgres:5432/${POSTGRES_DB:-passit}
+      PASSIT_CORS_ORIGINS: ${PASSIT_CORS_ORIGINS:-http://localhost:3000}
+      PASSIT_JWT_SECRET: ${PASSIT_JWT_SECRET:-local-development-only}
+      PASSIT_JWT_ALGORITHM: ${PASSIT_JWT_ALGORITHM:-HS256}
+      PASSIT_SESSION_COOKIE_SECURE: ${PASSIT_SESSION_COOKIE_SECURE:-false}
+      PASSIT_AWS_REGION: ${PASSIT_AWS_REGION:-ap-southeast-1}
+      PASSIT_AWS_PROFILE: ${PASSIT_AWS_PROFILE:-}
+      PASSIT_BEDROCK_MODEL_ID: ${PASSIT_BEDROCK_MODEL_ID:-}
+      PASSIT_BEDROCK_GUARDRAIL_ID: ${PASSIT_BEDROCK_GUARDRAIL_ID:-}
+      PASSIT_BEDROCK_GUARDRAIL_VERSION: ${PASSIT_BEDROCK_GUARDRAIL_VERSION:-}
+      PASSIT_S3_BUCKET: ${PASSIT_S3_BUCKET:-}
+      PASSIT_S3_PREFIX: ${PASSIT_S3_PREFIX:-media/}
+      PASSIT_CLOUDFRONT_DOMAIN: ${PASSIT_CLOUDFRONT_DOMAIN:-}
+      PASSIT_MEDIA_SIGNED_URL_TTL_SECONDS: ${PASSIT_MEDIA_SIGNED_URL_TTL_SECONDS:-900}
+      PASSIT_MONGODB_URI: ${PASSIT_MONGODB_URI:-}
+      PASSIT_MONGODB_DATABASE: ${PASSIT_MONGODB_DATABASE:-passit}
+      PASSIT_MONGODB_ATLAS_PUBLIC_KEY: ${PASSIT_MONGODB_ATLAS_PUBLIC_KEY:-}
+      PASSIT_MONGODB_ATLAS_PRIVATE_KEY: ${PASSIT_MONGODB_ATLAS_PRIVATE_KEY:-}
+      PASSIT_MONGODB_ATLAS_PROJECT_ID: ${PASSIT_MONGODB_ATLAS_PROJECT_ID:-}
+      PASSIT_ONEMAP_API_URL: ${PASSIT_ONEMAP_API_URL:-https://www.onemap.gov.sg/api}
+      PASSIT_ONEMAP_TOKEN: ${PASSIT_ONEMAP_TOKEN:-}
+      PASSIT_LLM_API_URL: ${PASSIT_LLM_API_URL:-}
+      PASSIT_LLM_API_KEY: ${PASSIT_LLM_API_KEY:-}
+      PASSIT_PAYMENT_MODE: ${PASSIT_PAYMENT_MODE:-mock}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: ./web
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/v1}
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/ >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  passit-postgres:

@@ -1,19 +1,19 @@
 {
-  "name": "letssharelah",
+  "name": "passit",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
-  "description": "AI assisted listing and pricing for Singapore's peer to peer rentals",
+  "description": "PassIt peer-to-peer rental marketplace monorepo",
   "scripts": {
-    "start": "node src/server.mjs",
-    "dev": "node --watch src/server.mjs",
-    "test": "node --test"
+    "api:dev": "uv run --directory api uvicorn app.main:app --reload --port 8000",
+    "api:lint": "uv run --directory api ruff check .",
+    "api:test": "uv run --directory api pytest",
+    "web:dev": "npm run dev --prefix web",
+    "web:check": "npm run check --prefix web",
+    "web:build": "npm run build --prefix web",
+    "contract:generate": "uv run --directory api python -m scripts.export_openapi && npm run generate:api --prefix web",
+    "check": "npm run api:lint && npm run api:test && npm run web:check"
   },
   "engines": {
-    "node": ">=20.19"
-  },
-  "dependencies": {
-    "mongodb": "^7.0.0"
+    "node": ">=22"
   }
 }
-

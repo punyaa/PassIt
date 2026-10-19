@@ -1,0 +1,26 @@
+# Bootstrap owner until the six GitHub handles are confirmed.
+* @punyaa
+
+# P1 Platform: cloud, Docker, CI/CD, monitoring and backend authentication.
+/.github/ @punyaa
+/compose.yaml @punyaa
+/infra/ @punyaa
+/api/app/auth/ @punyaa
+/api/app/core/ @punyaa
+
+# B1 Booking: availability, booking state machine, checklists and reviews.
+/api/app/bookings/ @punyaa
+/api/app/reviews/ @punyaa
+/scripts/loadtest/contention.js @punyaa
+
+# B2 Transactions: ledger, settlement, scheduled release and aggregation.
+/api/app/transactions/ @punyaa
+
+# B3 Catalogue: listings, media, search, location, pricing and seed data.
+/api/app/catalogue/ @punyaa
+/api/app/media/ @punyaa
+/scripts/seed/ @punyaa
+
+# F1 owns shared frontend components; F1 and F2 split route ownership in web/README.md.
+/web/components/ @punyaa
+/web/app/ @punyaa

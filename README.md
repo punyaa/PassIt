@@ -1,112 +1,167 @@
-# LetsShareLah
+# PassIt
 
-**Rent more, own less.** LetsShareLah is a Singapore neighbourhood rental marketplace prototype. Browse items, search by category or keyword, filter by neighbourhood, and see approximate distances. Owners can create a listing with private, local AI writing help.
+**Rent more, own less.** PassIt is a Singapore peer-to-peer rental marketplace prototype built by six parallel workstreams.
 
-> Status: deployable invite-only demo, not a production marketplace. The catalog begins with fictional sample listings. Listings persist only when MongoDB is configured; otherwise they disappear on restart. Demo role profiles are **not real accounts**. There are no bookings, messages, payments, insurance or escrow. Price suggestions are estimates, not market data.
+This is the master project document. Folder-specific details live only in the short README inside each primary implementation folder.
 
-## Why build it?
+## Start locally
 
-People often own equipment they use only occasionally. Renting nearby items can save money and space, while owners can make side income. LetsShareLah makes discovery straightforward and helps owners write a clear first listing. A local model avoids per-listing AI API charges and keeps draft details on the user's computer.
-
-## What works today
-
-- Browse a fictional Singapore rental catalog by category, keyword and neighbourhood.
-- Optionally use browser location permission to see demo items within 12 km; coordinates stay in the browser.
-- Open item detail cards showing condition, pickup neighbourhood, daily rate and owner name.
-- Enter renter or owner demo mode without creating an account. A hosted owner must provide an invite code; this is a demo guard, not user authentication.
-- As an owner, enter an item, condition, replacement value and pickup neighbourhood, then edit and publish a demo listing.
-- Receive daily, weekly, monthly and deposit suggestions in SGD. A local Ollama model drafts the title and description; the handover checklist uses a standard, deterministic template. The UI selects a local model automatically, preferring Qwen3.5 0.8B when installed.
-- Fall back to a clearly labelled template draft if local AI is unavailable.
-- Run locally without cloud accounts or API keys. MongoDB Atlas is optional for local work and required for a durable hosted demo.
-
-AI drafts the listing copy for owner review. A deterministic pricing formula supplies transparent starting estimates and prevents a model response from silently changing prices. Owners can edit the daily rent before publishing. The formula is a prototype assumption, not market data.
-
-## Quick start
-
-You need Node.js 20.19 or newer.
+The supported local environment is Docker Compose:
 
 ```bash
-git clone https://github.com/punyaa/LetsShareLah.git
-cd LetsShareLah
-npm ci
-npm start
+docker compose up --build
 ```
 
-Open <http://localhost:3000>. Browsing and the owner demo flow work without installing a model.
+- Web application: <http://localhost:3000>
+- API documentation: <http://localhost:8000/docs>
+- API health: <http://localhost:8000/health>
+- PostgreSQL: `localhost:5432`
 
-For the local AI flow, install [Ollama](https://ollama.com/) and an open-weight model, then start the app:
+Compose waits for PostgreSQL, applies pending Alembic migrations, and then starts the API and web application.
+
+For native development:
 
 ```bash
-ollama pull qwen3.5:0.8b
-npm start
+uv sync --project api --dev
+npm ci --prefix web
+uv run --directory api alembic upgrade head
+npm run api:dev
+npm run web:dev
 ```
 
-The UI does not expose a model picker to renters. The server uses `OLLAMA_MODEL` if set, otherwise prefers an installed `qwen3.5:0.8b`, then another installed local model. If model generation fails, it returns a template draft and labels it as such. No API key is needed. The server only connects to Ollama on this computer. [Qwen3.5 0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) publishes its weights under Apache 2.0; model licenses differ, so check the exact model you choose.
-
-## Deployable demo with Atlas and Render
-
-The included [`render.yaml`](render.yaml) requests a **free** Render Node web service. It does not create a service or spend a promo credit by itself. Before deploying, create or select a MongoDB Atlas free/student cluster, add a database user, and configure network access for your deployment. Set `MONGODB_URI` and a random `OWNER_ACCESS_CODE` of at least 16 characters as **secret environment variables in Render**, not in Git. The app connects to the `letssharelah` database by default and creates the `listings` collection on first write. Use a dedicated database user with the minimum privileges you can configure. Review both providers' current free-tier limits and billing settings before pressing Deploy.
-
-Production mode (`NODE_ENV=production`) refuses to start without Atlas and the invite code. The code protects owner draft and publish endpoints from anonymous writes, but it is **not** a substitute for real accounts, rate limiting, moderation, or abuse protection. Share it only with trusted testers. Renter browsing stays public. Seed listings are fictional and are never inserted into your Atlas database.
-
-The hosted Render service does **not** run Ollama; its draft endpoint returns an explicitly labelled editable template. To demonstrate open-weight AI, run the local version with Ollama and record that flow separately. Do not describe a hosted template response as AI-generated. A hosted open-weight inference integration is a future step and should be enabled only after reviewing usage limits and costs.
-
-The free `.tech` domain is optional. Connect it only after a working deployed URL exists, and review renewal pricing before claiming it. The Backboard and Tinker credits are optional experiments, not required for the deployment above. This project does not claim their prize categories unless their technology is actually integrated and demonstrated.
-
-## Development
+Create your private local configuration before starting:
 
 ```bash
-npm run dev
-npm test
+cp .env.example .env
 ```
 
-The local server exposes:
+The template explains which values are required, which are optional, and where each value comes from. Replace only the settings needed by your workstream.
 
-| Endpoint | Purpose |
-| --- | --- |
-| `GET /api/health` | Server and database readiness |
-| `GET /api/config` | Public demo configuration; never includes secrets |
-| `GET /api/models` | List installed local Ollama models |
-| `GET /api/catalog` | Get categories, neighbourhood coordinates and demo listings |
-| `POST /api/owner-access` | Verify the owner invite code |
-| `POST /api/listings/draft` | Generate prices and a local AI listing |
-| `POST /api/listings/draft?demo=1` | Generate a sample listing without Ollama |
-| `POST /api/listings` | Publish a validated listing to Atlas, or to local memory without Atlas |
+## Environment variables and secrets
 
-When `OWNER_ACCESS_CODE` is set, all owner POST endpoints require `Authorization: Bearer <code>`.
+| Value | Local development | Shared staging/demo |
+| --- | --- | --- |
+| App URLs and feature settings | Root `.env` | GitHub Environment variables or ECS task configuration |
+| JWT secret, provider tokens and MongoDB URI | Root `.env` | AWS Secrets Manager or SSM Parameter Store |
+| AWS Bedrock and S3 access | AWS SSO profile in `~/.aws` | ECS task IAM role |
+| Deployment role identifier | Not normally needed | GitHub Environment secret such as `AWS_ROLE_ARN` |
 
-Example request:
+Rules:
 
-```bash
-curl -X POST 'http://localhost:3000/api/listings/draft?demo=1' \
-  -H 'content-type: application/json' \
-  -d '{"name":"4-person camping tent","category":"Outdoor & travel","condition":"Excellent; used twice","replacementValue":250,"area":"Bishan"}'
-```
+- Commit `.env.example`, but never commit `.env` or any environment-specific variant.
+- Never put a secret in a variable beginning with `NEXT_PUBLIC_`; Next.js exposes those values to the browser.
+- Bedrock and S3 use AWS IAM. They do not require separate API keys.
+- Prefer short-lived AWS SSO credentials locally and an ECS task role in AWS. Do not create long-lived AWS access keys for teammates.
+- PostgreSQL is the primary database. MongoDB variables are optional and should only be populated if an approved workstream deliberately uses Atlas.
+- Store shared secrets in the deployment secret store, not in GitHub source files, issues, chat messages or screenshots.
+- Rotate a token immediately if it is accidentally committed or shared.
 
-## Repository map
+## Repository structure
 
 ```text
-public/              Browser interface
-src/ai/              Local model integration
-src/core/            Input validation, pricing, sample listing
-src/server.mjs       HTTP routes and static file server
-test/                Core behaviour tests
-docs/roadmap.md      Challenge and product roadmap
+api/          FastAPI, domain modules, Alembic, OpenAPI and backend tests
+web/          Next.js, TypeScript, Tailwind, generated API types and MSW mocks
+infra/        Docker/AWS infrastructure boundaries and Terraform environments
+scripts/      Seed, load, contention and demo-operation tools
+.github/      CI, dependency updates, issue forms and ownership rules
+compose.yaml  Local PostgreSQL, API and web environment
 ```
 
-## Challenge fit
+The supported product lives only in these paths. There is no separate legacy application.
 
-**Hacktoberfest 2026 Week 2 — Side Hustle:** a local open-weight model is used to prepare listings for a potential rental side hustle. A valid entry requires a new project built within that challenge's window and a DEV submission. This repository alone is not a submission or a badge.
+## Architecture
 
-**Amazon Developer Hackathon:** the current prototype is a base for a future simulated Alexa+ workflow. It does **not yet** meet the Amazon primary-track requirement. See [the roadmap](docs/roadmap.md) for the work still needed.
+```text
+Next.js web  →  FastAPI  →  PostgreSQL 16
+                    ├── S3 / CloudFront media
+                    ├── OneMap / approved model service
+                    └── EventBridge / settlement worker
+```
 
-If a related university group project informed the idea, its code, diagrams, and report text should be reused only with the appropriate contributors' permission. This repository's implementation is written as a separate prototype.
+- FastAPI owns the committed OpenAPI contract in `api/openapi.json`.
+- The frontend generates types in `web/lib/api-types.ts` and uses MSW mocks while endpoints are unfinished.
+- Alembic owns database schema changes.
+- A PostgreSQL exclusion constraint prevents overlapping active bookings.
+- Monetary values use exact decimal types and every ledger event must balance to zero.
+- Payments and deposits are simulated ledger entries; the prototype does not move real money.
+- Public listings use approximate neighbourhood information, never exact addresses.
+- Terraform currently defines reviewed boundaries, not deployed AWS resources.
 
-## Contributing
+## Six workstreams
 
-Small improvements are welcome. Please open an issue describing the user problem before a large change. Keep examples fictional, avoid personal addresses in test data, and run `npm test` before proposing a change.
+| Stream | Responsibility | Owned paths |
+| --- | --- | --- |
+| P1 Platform | Cloud, Terraform, Docker, CI/CD, monitoring and authentication | `infra/`, `.github/`, `compose.yaml`, `api/app/auth/`, `api/app/core/` |
+| B1 Booking | Availability, conflict-safe booking, lifecycle, checklists and reviews | `api/app/bookings/`, `api/app/reviews/`, contention tests |
+| B2 Transactions | Balanced ledger, holds, releases, deposits and aggregation | `api/app/transactions/` |
+| B3 Catalogue | Listings, media, search, location, pricing and seed data | `api/app/catalogue/`, `api/app/media/` |
+| F1 Front core | Design system, shell, auth, catalogue, search and booking views | shared `web/components/` and core routes |
+| F2 Front transaction | Handover, return, damage, dashboards and reviews | transaction routes under `web/app/` |
 
-## License
+Replace the bootstrap account in `.github/CODEOWNERS` when the six GitHub usernames are confirmed.
 
-MIT. See [LICENSE](LICENSE).
+## Contract workflow
 
+After changing API routes or schemas:
+
+```bash
+uv run --directory api python -m scripts.export_openapi
+npm run generate:api --prefix web
+```
+
+Commit `api/openapi.json` and `web/lib/api-types.ts` with the implementation. Frontend mocks must follow the same contract.
+
+## Development workflow
+
+1. Claim an issue with a clear owner and acceptance criteria.
+2. Branch from `main` using `feat/`, `fix/`, `test/`, `docs/` or `chore/`.
+3. Keep changes inside the owning workstream where possible.
+4. Add tests for behaviour changes and update the API contract when applicable.
+5. Open a focused pull request and request one cross-stream reviewer.
+6. Merge only after CI passes and review conversations are resolved.
+
+Use short imperative commit subjects such as `feat: add booking conflict response`.
+
+## Verification
+
+```bash
+npm run api:lint
+npm run api:test
+npm run web:check
+npm run web:build
+docker compose config --quiet
+```
+
+CI repeats these checks and rejects stale generated contracts.
+
+## Delivery plan
+
+- **Foundation:** authentication, listing creation, media upload and stable staging.
+- **Correctness:** transactional booking, contention tests, balanced ledger and idempotent settlement.
+- **Journey:** search, booking, handover, return, damage, dashboards and reviews.
+- **Evaluation:** load testing, fault recovery, cost evidence and moderated usability testing.
+
+If scope must be reduced, cut delivery, subscriptions, monthly pricing and reviews before conflict-safe booking, the ledger, condition evidence or return settlement.
+
+## Repository administration
+
+Before sharing the repository:
+
+- use the final `PassIt` repository name and description;
+- invite the six contributors and update `.github/CODEOWNERS`;
+- protect `main` with pull requests, one approval, required CI and resolved conversations;
+- enable secret scanning, push protection and private vulnerability reporting;
+- store deployment secrets only in GitHub Environments;
+- use squash merging and delete merged branches automatically.
+
+## Security and conduct
+
+Do not commit secrets, identity documents, exact addresses, real payment data or participant data. Report vulnerabilities privately to the repository owner or course team rather than through a public issue. Do not test against systems or data you do not own.
+
+Contributors must communicate respectfully, review ideas rather than people, acknowledge others' work and maintain academic integrity. Harassment, discrimination, plagiarism and disclosure of private information are not acceptable.
+
+This is a prototype, not a production marketplace. It does not provide identity verification, insurance, real payment processing or a completed legal/privacy review.
+
+## Licence
+
+MIT. See `LICENSE`.
