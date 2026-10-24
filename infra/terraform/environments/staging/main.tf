@@ -81,6 +81,8 @@ module "ecs_alb" {
       PASSIT_S3_BUCKET         = module.cdn.bucket_name
       PASSIT_S3_PREFIX         = "media/"
       PASSIT_CLOUDFRONT_DOMAIN = module.cdn.cloudfront_domain
+      PASSIT_LLM_API_URL       = "https://soclaas-api.comp.nus.edu.sg/v1"
+      PASSIT_LLM_MODEL         = "default"
     },
     var.release_image_tag == null ? {} : {
       PASSIT_SCHEDULER_BACKEND  = "eventbridge"
@@ -88,6 +90,10 @@ module "ecs_alb" {
       PASSIT_SCHEDULER_ROLE_ARN = module.release_scheduler.scheduler_role_arn
     },
   )
+
+  api_secrets = {
+    PASSIT_LLM_API_KEY = "arn:aws:ssm:ap-southeast-1:034313912472:parameter/passit/staging/llm-api-key"
+  }
 }
 
 module "release_scheduler" {
