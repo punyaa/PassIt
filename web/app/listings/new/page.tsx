@@ -1,5 +1,14 @@
-import { ScreenPlaceholder } from "@/components/screen-placeholder";
+import { PageShell } from "@/components/page-shell";
+import { RequireAuth } from "@/components/session";
+
+import { ListingForm } from "./listing-form";
 
 export default function NewListingPage() {
-  return <ScreenPlaceholder title="List an item" description="Create a listing, upload media directly to S3 and review validated price suggestions." owner="F1 Front core" />;
+  return (
+    <PageShell width="max-w-3xl">
+      <RequireAuth>
+        <ListingForm />
+      </RequireAuth>
+    </PageShell>
+  );
 }

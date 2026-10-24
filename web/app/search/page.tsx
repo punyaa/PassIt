@@ -1,5 +1,15 @@
-import { ScreenPlaceholder } from "@/components/screen-placeholder";
+import { Suspense } from "react";
+
+import { PageShell } from "@/components/page-shell";
+
+import { SearchView } from "./search-view";
 
 export default function SearchPage() {
-  return <ScreenPlaceholder title="Search nearby rentals" description="Filter by category, MRT station and date availability using the frozen listing contract." owner="F1 Front core" />;
+  return (
+    <PageShell width="max-w-7xl">
+      <Suspense>
+        <SearchView />
+      </Suspense>
+    </PageShell>
+  );
 }

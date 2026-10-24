@@ -23,6 +23,7 @@ def test_expected_contract_operations_are_registered() -> None:
         "createReview",
         "getBookingLedger",
         "getDashboard",
+        "getCurrentUser",
         "listMyListings",
         "listMrtStations",
         "getListing",

@@ -75,6 +75,8 @@ services:
       context: ./web
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/v1}
+      # Local only: lets the login page accept seed tokens until P1 ships login.
+      PASSIT_DEV_LOGIN: ${PASSIT_DEV_LOGIN:-true}
     ports:
       - "3000:3000"
     depends_on:

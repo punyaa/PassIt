@@ -1,22 +1,10 @@
 import Link from "next/link";
 
 import { AppHeader } from "@/components/app-header";
+import { FeaturedListings } from "@/components/featured-listings";
+import { CATEGORIES } from "@/lib/catalogue";
 
-const categories = [
-  ["⛺", "Outdoor"],
-  ["🎉", "Events"],
-  ["🛠️", "Tools"],
-  ["🧸", "Baby & kids"],
-  ["📷", "Electronics"],
-  ["🪴", "Home"],
-];
-
-const listings = [
-  ["📷", "Fujifilm camera kit", "Bishan", "S$28"],
-  ["⛺", "4-person camping tent", "Clementi", "S$12"],
-  ["🛠️", "Cordless drill set", "Queenstown", "S$9"],
-  ["📽️", "Portable projector", "Bugis", "S$22"],
-];
+const POPULAR_STATIONS = ["Bishan", "Bugis", "Clementi", "Jurong East", "Tampines", "Woodlands"];
 
 export default function Home() {
   return (
@@ -54,22 +42,23 @@ export default function Home() {
         </section>
 
         <section className="mx-auto -mt-7 max-w-6xl px-5">
-          <form className="grid gap-3 rounded-2xl border border-[#eae9df] bg-white p-3 shadow-2xl md:grid-cols-[1fr_.7fr_auto]">
+          <form action="/search" className="grid gap-3 rounded-2xl border border-[#eae9df] bg-white p-3 shadow-2xl md:grid-cols-[1fr_.7fr_auto]">
             <label className="px-4 py-3 text-xs font-extrabold tracking-wider text-[#6e8a7b]">
               WHAT ARE YOU LOOKING FOR?
-              <input className="mt-2 block w-full text-base font-semibold text-[#17352b] outline-none" placeholder="Try camera, tent, drill…" />
+              <input className="mt-2 block w-full text-base font-semibold text-[#17352b] outline-none" name="q" placeholder="Try camera, tent, drill…" />
             </label>
             <label className="px-4 py-3 text-xs font-extrabold tracking-wider text-[#6e8a7b]">
               NEAR
-              <select className="mt-2 block w-full bg-white text-base font-semibold text-[#17352b] outline-none">
-                <option>All Singapore</option>
-                <option>Bishan</option>
-                <option>Clementi</option>
+              <select className="mt-2 block w-full bg-white text-base font-semibold text-[#17352b] outline-none" name="mrt">
+                <option value="">All Singapore</option>
+                {POPULAR_STATIONS.map((station) => (
+                  <option key={station}>{station}</option>
+                ))}
               </select>
             </label>
-            <Link className="grid place-items-center rounded-xl bg-[#f2a65f] px-7 py-4 font-extrabold" href="/search">
+            <button className="grid place-items-center rounded-xl bg-[#f2a65f] px-7 py-4 font-extrabold" type="submit">
               Search items →
-            </Link>
+            </button>
           </form>
         </section>
 
@@ -77,8 +66,12 @@ export default function Home() {
           <p className="text-xs font-extrabold tracking-[0.16em] text-[#cb7540]">A LITTLE OF EVERYTHING</p>
           <h2 className="mt-3 text-4xl font-extrabold tracking-[-0.045em]">What’s your next plan?</h2>
           <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-            {categories.map(([icon, name]) => (
-              <Link className="flex min-h-32 flex-col justify-between rounded-2xl border border-[#e8ece3] bg-[#f7f6ef] p-4" href="/search" key={name}>
+            {CATEGORIES.slice(0, 6).map(({ icon, name }) => (
+              <Link
+                className="flex min-h-32 flex-col justify-between rounded-2xl border border-[#e8ece3] bg-[#f7f6ef] p-4"
+                href={`/search?category=${encodeURIComponent(name)}`}
+                key={name}
+              >
                 <span className="text-3xl">{icon}</span>
                 <strong className="text-sm">{name}</strong>
               </Link>
@@ -90,19 +83,8 @@ export default function Home() {
           <div className="mx-auto max-w-7xl px-5 lg:px-8">
             <p className="text-xs font-extrabold tracking-[0.16em] text-[#cb7540]">DISCOVER & DO MORE</p>
             <h2 className="mt-3 text-4xl font-extrabold tracking-[-0.045em]">Things to rent around you.</h2>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {listings.map(([icon, name, area, price]) => (
-                <Link className="overflow-hidden rounded-2xl border border-[#e4ebe1] bg-white shadow-sm" href="/listings/sample" key={name}>
-                  <div className="grid h-44 place-items-center bg-gradient-to-br from-[#aacbb8] to-[#d9e7bc] text-7xl">{icon}</div>
-                  <div className="p-5">
-                    <h3 className="min-h-12 text-lg font-extrabold">{name}</h3>
-                    <p className="text-sm text-[#718477]">⌖ {area}</p>
-                    <div className="mt-4 border-t border-[#edf0e9] pt-3 text-xl font-extrabold">
-                      {price} <small className="text-xs font-normal text-[#718477]">/ day</small>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+            <div className="mt-8">
+              <FeaturedListings />
             </div>
           </div>
         </section>
@@ -110,11 +92,15 @@ export default function Home() {
         <section className="mx-auto max-w-7xl px-5 py-20 lg:px-8" id="how-it-works">
           <h2 className="text-4xl font-extrabold tracking-[-0.045em]">Sharing looks good on everyone.</h2>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {["Find your thing", "Book with confidence", "Return and review"].map((step, index) => (
+            {[
+              ["Find your thing", "Search by MRT station and pick dates; only items free for your dates show up."],
+              ["Book with confidence", "Your fee and deposit are held safely. Photos at handover record the item's condition."],
+              ["Return and review", "Photos at return settle the deposit fairly. Then rate each other."],
+            ].map(([step, text], index) => (
               <article className="rounded-2xl border border-[#e5ece3] bg-white p-7" key={step}>
                 <span className="text-sm font-extrabold text-[#cb7540]">0{index + 1}</span>
                 <h3 className="mt-8 text-xl font-extrabold">{step}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#718477]">A clear, evidence-backed step in the PassIt rental journey.</p>
+                <p className="mt-2 text-sm leading-6 text-[#718477]">{text}</p>
               </article>
             ))}
           </div>

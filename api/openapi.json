@@ -417,6 +417,30 @@
         "title": "ChecklistSubmission",
         "type": "object"
       },
+      "CurrentUserResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name",
+          "email"
+        ],
+        "title": "CurrentUserResponse",
+        "type": "object"
+      },
       "DamageSubmission": {
         "additionalProperties": false,
         "properties": {
@@ -1542,6 +1566,61 @@
         "summary": "Health",
         "tags": [
           "platform"
+        ]
+      }
+    },
+    "/v1/auth/me": {
+      "get": {
+        "description": "Who the session belongs to. 401 when signed out.",
+        "operationId": "getCurrentUser",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Current User",
+        "tags": [
+          "authentication"
         ]
       }
     },
