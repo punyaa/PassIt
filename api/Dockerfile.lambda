@@ -1,0 +1,10 @@
+# Fee-release Lambda, invoked by one-off EventBridge Scheduler schedules.
+# Handler: app.transactions.lambda_handler.handler
+# Build: docker build --platform linux/arm64 --provenance=false -f Dockerfile.lambda .
+FROM public.ecr.aws/lambda/python:3.13
+
+COPY pyproject.toml ./
+COPY app ./app
+RUN pip install --no-cache-dir .
+
+CMD ["app.transactions.lambda_handler.handler"]

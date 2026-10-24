@@ -1,0 +1,118 @@
+name: Deploy staging
+
+# Runs after CI passes on main. Builds ARM64 images (Fargate runs ARM), runs migrations as a
+# one-off ECS task inside the VPC, then rolls both services onto the new image.
+#
+# One-time setup: add the repository VARIABLE AWS_DEPLOY_ROLE_ARN (Settings > Secrets and
+# variables > Actions > Variables). Its value is the `github_deploy_role_arn` Terraform output.
+# No AWS access keys are stored in GitHub: the role is assumed through OIDC.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-southeast-1
+  CLUSTER: passit-staging
+  API_REPO: passit-staging-api
+  WEB_REPO: passit-staging-web
+
+jobs:
+  deploy:
+    name: Build, migrate, deploy
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Image tag
+        run: echo "TAG=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_ENV"
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push images
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          # Tags are immutable, so re-running a deploy for the same commit reuses the image.
+          push() {
+            repo="$1"; context="$2"; shift 2
+            if aws ecr describe-images --repository-name "$repo" --image-ids imageTag="$TAG" >/dev/null 2>&1; then
+              echo "$repo:$TAG already exists, skipping build"
+            else
+              docker build -t "$REGISTRY/$repo:$TAG" "$@" "$context"
+              docker push "$REGISTRY/$repo:$TAG"
+            fi
+          }
+          push "$API_REPO" api
+          push "$WEB_REPO" web --build-arg NEXT_PUBLIC_API_URL=/v1
+
+      - name: Register task definitions with the new image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          register() {
+            family="$1"; repo="$2"
+            aws ecs describe-task-definition --task-definition "$family" --query taskDefinition \
+              | jq --arg image "$REGISTRY/$repo:$TAG" '
+                  .containerDefinitions[0].image = $image
+                  | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities,
+                        .registeredAt, .registeredBy)' > "/tmp/$family.json"
+            aws ecs register-task-definition --cli-input-json "file:///tmp/$family.json" \
+              --query taskDefinition.taskDefinitionArn --output text
+          }
+          echo "API_TD=$(register passit-staging-api "$API_REPO")" >> "$GITHUB_ENV"
+          echo "MIGRATE_TD=$(register passit-staging-migrate "$API_REPO")" >> "$GITHUB_ENV"
+          echo "WEB_TD=$(register passit-staging-web "$WEB_REPO")" >> "$GITHUB_ENV"
+
+      - name: Run migrations
+        run: |
+          # Reuse the network settings of the running API service.
+          network=$(aws ecs describe-services --cluster "$CLUSTER" --services api \
+            --query 'services[0].networkConfiguration' --output json)
+          task=$(aws ecs run-task --cluster "$CLUSTER" --task-definition "$MIGRATE_TD" \
+            --launch-type FARGATE --network-configuration "$network" \
+            --query 'tasks[0].taskArn' --output text)
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$task"
+          code=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$task" \
+            --query 'tasks[0].containers[0].exitCode' --output text)
+          if [ "$code" != "0" ]; then
+            echo "::error::Migration task exited with $code"
+            stream="migrate/migrate/${task##*/}"
+            aws logs get-log-events --log-group-name "/ecs/passit-staging-api" \
+              --log-stream-name "$stream" --query 'events[].message' --output text | tail -40
+            exit 1
+          fi
+
+      - name: Deploy services
+        run: |
+          aws ecs update-service --cluster "$CLUSTER" --service api --task-definition "$API_TD" >/dev/null
+          aws ecs update-service --cluster "$CLUSTER" --service web --task-definition "$WEB_TD" >/dev/null
+          # The deployment circuit breaker rolls back automatically if new tasks never go healthy.
+          aws ecs wait services-stable --cluster "$CLUSTER" --services api web
+
+      - name: Smoke test
+        run: |
+          dns=$(aws elbv2 describe-load-balancers --names passit-staging \
+            --query 'LoadBalancers[0].DNSName' --output text)
+          curl --fail --silent --show-error --max-time 15 "http://$dns/health"

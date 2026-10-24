@@ -13,7 +13,7 @@ Switch with PASSIT_SCHEDULER_BACKEND=local|eventbridge.
   eventbridge  EventBridge Scheduler invokes the Lambda in
                `app/transactions/lambda_handler.py`.
 
-P1 hand-off for EventBridge (see api/README.md, "AWS hand-off"):
+Platform hand-off for EventBridge (see api/README.md, "AWS hand-off"):
   1. Package the API image as a Lambda (or a zip of `app/`) with handler
      `app.transactions.lambda_handler.handler`, with RDS network access and
      PASSIT_DATABASE_URL set.
@@ -46,7 +46,7 @@ class LocalScheduler:
 
 
 class EventBridgeScheduler:
-    """AWS implementation. UNVERIFIED until P1 runs it against real resources."""
+    """AWS implementation, verified against the staging account."""
 
     def __init__(self, settings: Settings) -> None:
         if not (settings.release_lambda_arn and settings.scheduler_role_arn):

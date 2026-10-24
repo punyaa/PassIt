@@ -1,1 +1,1 @@
-"""Authentication contracts owned by P1 Platform."""
+"""Authentication contracts owned by the Platform stream."""

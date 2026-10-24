@@ -4,8 +4,9 @@
     docker compose exec api python -m scripts.seed --reset
 
 Bookings are driven through the real API in-process, so every ledger entry, checklist and
-state transition is produced by the same code the app uses. Seed users cannot log in
-with a password until P1 ships authentication; the script prints session tokens instead.
+state transition is produced by the same code the app uses. Seed users sign in as
+`seed-01@passit.demo` to `seed-20@passit.demo` with the password below, and the script also
+prints session tokens for load tests.
 """
 
 import argparse
@@ -17,6 +18,7 @@ from uuid import UUID
 from sqlalchemy import func, select, text
 
 from app.auth.dependencies import issue_access_token
+from app.auth.passwords import hash_password
 from app.catalogue.mrt_stations import STATIONS
 from app.core.db import get_sessionmaker
 from app.models import Listing, User
@@ -95,12 +97,16 @@ async def reset() -> None:
         await db.commit()
 
 
+DEMO_PASSWORD = "passit-demo-2026"
+
+
 async def create_users() -> list[UUID]:
+    password_hash = hash_password(DEMO_PASSWORD)  # one hash for all 20 accounts
     async with get_sessionmaker()() as db:
         users = [
             User(
-                email=f"seed-{index:02d}@passit.test",
-                password_hash="seed-account-no-password",
+                email=f"seed-{index:02d}@passit.demo",
+                password_hash=password_hash,
                 display_name=name,
             )
             for index, name in enumerate(NAMES, start=1)
@@ -160,6 +166,7 @@ async def run(rng: random.Random) -> None:
     async with get_sessionmaker()() as db:
         listing_count = await db.scalar(select(func.count()).select_from(Listing))
     print(f"Seeded {len(user_ids)} users, {listing_count} listings, {len(BOOKING_PLAN)} bookings.")
+    print(f"Demo logins: seed-01@passit.demo ... seed-20@passit.demo, password {DEMO_PASSWORD}")
     print("Session tokens (valid 30 days) for the demo:")
     for user_id, name in list(zip(user_ids, NAMES, strict=True))[:3]:
         print(f"  {name:<14} {auth(user_id)['authorization']}")

@@ -9,7 +9,7 @@ Selection (first match wins):
 Callers must treat every failure (timeout, throttling, bad JSON) as "use the heuristic":
 listing creation is never blocked on the model.
 
-B3/P1 hand-off for Bedrock (see api/README.md, "AWS hand-off"):
+B3/Platform hand-off for Bedrock (see api/README.md, "AWS hand-off"):
   1. Enable the model in the Bedrock console for ap-southeast-1.
   2. Grant the ECS task role bedrock:InvokeModel (and bedrock:ApplyGuardrail if used).
   3. `uv add --project api boto3`, set PASSIT_BEDROCK_MODEL_ID.

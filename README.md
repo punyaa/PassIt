@@ -50,7 +50,7 @@ The template explains which values are required, which are optional, and where e
 | App URLs and feature settings | Root `.env` | GitHub Environment variables or ECS task configuration |
 | JWT secret, provider tokens and MongoDB URI | Root `.env` | AWS Secrets Manager or SSM Parameter Store |
 | AWS Bedrock and S3 access | AWS SSO profile in `~/.aws` | ECS task IAM role |
-| Deployment role identifier | Not normally needed | GitHub Environment secret such as `AWS_ROLE_ARN` |
+| Deployment role identifier | Not normally needed | GitHub repository variable `AWS_DEPLOY_ROLE_ARN`, an OIDC role, so no AWS keys are stored in GitHub |
 
 Rules:
 
@@ -91,17 +91,17 @@ Next.js web  →  FastAPI  →  PostgreSQL 16
 - Monetary values use exact decimal types and every ledger event must balance to zero.
 - Payments and deposits are simulated ledger entries; the prototype does not move real money.
 - Public listings use approximate neighbourhood information, never exact addresses.
-- Terraform currently defines reviewed boundaries, not deployed AWS resources.
+- Staging is deployed on AWS from `infra/terraform/environments/staging/` (see `infra/README.md`). The demo environment is defined and plans cleanly but is not deployed yet.
 
 ## Six workstreams
 
 | Stream | Responsibility | Owned paths |
 | --- | --- | --- |
-| P1 Platform | Cloud, Terraform, Docker, CI/CD, monitoring and authentication | `infra/`, `.github/`, `compose.yaml`, `api/app/auth/`, `api/app/core/` |
+| Platform | Cloud, Terraform, Docker, CI/CD, monitoring and authentication | `infra/`, `.github/`, `compose.yaml`, `api/app/auth/`, `api/app/core/` |
 | B1 Booking | Availability, conflict-safe booking, lifecycle, checklists and reviews | `api/app/bookings/`, `api/app/reviews/`, contention tests |
 | B2 Transactions | Balanced ledger, holds, releases, deposits and aggregation | `api/app/transactions/` |
 | B3 Catalogue | Listings, media, search, location, pricing and seed data | `api/app/catalogue/`, `api/app/media/` |
-| F1 Front core | Design system, shell, auth, catalogue, search and booking views | shared `web/components/` and core routes |
+| Front core | Design system, shell, auth, catalogue, search and booking views | shared `web/components/` and core routes |
 | F2 Front transaction | Handover, return, damage, dashboards and reviews | transaction routes under `web/app/` |
 
 Replace the bootstrap account in `.github/CODEOWNERS` when the six GitHub usernames are confirmed.

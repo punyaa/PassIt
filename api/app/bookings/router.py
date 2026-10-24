@@ -8,7 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import Field
 from sqlalchemy import exists, or_, select
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentUser
@@ -25,6 +25,8 @@ from app.schemas import ApiModel
 from app.transactions import service as ledger_service
 
 logger = logging.getLogger(__name__)
+
+DEADLOCK_DETECTED = "40P01"  # PostgreSQL SQLSTATE for an aborted deadlock victim
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -225,6 +227,17 @@ async def create_booking(request: BookingCreate, user: CurrentUser, db: DbSessio
     except IntegrityError as error:
         await db.rollback()
         if _constraint_name(error) == "no_overlap":
+            raise HTTPException(
+                status.HTTP_409_CONFLICT, "Those dates are already booked"
+            ) from error
+        raise
+    except OperationalError as error:
+        await db.rollback()
+        # Two requests for overlapping but different ranges can wait on each other while
+        # PostgreSQL checks the exclusion constraint. It aborts exactly one with a deadlock
+        # error and the other keeps the dates, so the aborted request lost them like any
+        # other conflict and must not surface as a 500.
+        if getattr(error.orig, "sqlstate", None) == DEADLOCK_DETECTED:
             raise HTTPException(
                 status.HTTP_409_CONFLICT, "Those dates are already booked"
             ) from error

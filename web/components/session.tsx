@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 import { ApiError, apiRequest, type Schemas } from "@/lib/api-client";
+import { logOut } from "@/lib/auth";
 
 import { LinkButton, Spinner } from "./ui";
 
@@ -35,7 +36,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    // TODO(P1): also call the API's sign-out endpoint once it exists.
+    await logOut().catch(() => undefined);
+    // Also clear the development cookie, which only exists when dev sign-in is enabled.
     await fetch("/api/dev-session", { method: "DELETE" }).catch(() => undefined);
     setUser(null);
   }, []);

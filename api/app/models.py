@@ -43,7 +43,7 @@ class Base(DeclarativeBase):
     type_annotation_map = {datetime: DateTime(timezone=True)}
 
 
-# --- P1 Platform -------------------------------------------------------------
+# --- Platform ----------------------------------------------------------------
 
 
 class User(Base):

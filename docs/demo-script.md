@@ -1,6 +1,6 @@
 # PassIt demo script (draft)
 
-Owner: F1. Target length: 8 minutes. Rehearse against the demo environment, not localhost.
+Owner: Front core. Target length: 8 minutes. Rehearse against the demo environment, not localhost.
 
 ## Before the demo
 

@@ -3,7 +3,8 @@
  * httpOnly `passit_session` cookie that the API reads. The browser sends cookies by
  * host, not port, so the API on localhost:8000 receives a cookie set by :3000.
  *
- * TODO(P1): once POST /auth/session sets the cookie itself, disable this route.
+ * POST /auth/session now sets the cookie itself, so this route only serves local seed tokens.
+ * Keep it disabled in shared environments.
  */
 import { NextResponse } from "next/server";
 

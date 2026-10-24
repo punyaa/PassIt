@@ -52,6 +52,24 @@ export interface paths {
         put?: never;
         /** Create Session */
         post: operations["createSession"];
+        /** Delete Session */
+        delete: operations["deleteSession"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/signup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Account */
+        post: operations["createAccount"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1025,6 +1043,18 @@ export interface components {
             /** User Id */
             user_id: string;
         };
+        /** SignupRequest */
+        SignupRequest: {
+            /** Display Name */
+            display_name: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Password */
+            password: string;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -1113,6 +1143,57 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deleteSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    createAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignupRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

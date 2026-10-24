@@ -1,8 +1,7 @@
 """Caller identity for the domain routers.
 
-INTERIM (P1 Platform owns the final version). B1-B3 endpoints only depend on
-`current_user` returning a `User`. P1 can replace the body of `current_user` -- for
-example to add refresh tokens or Cognito -- without touching any domain router.
+B1-B3 endpoints only depend on `current_user` returning a `User`, so the way a session
+is issued (see `app/auth/router.py`) can change without touching any domain router.
 
 Contract the domain code relies on:
   - A JWT in `Authorization: Bearer <token>` or the `passit_session` httpOnly cookie.
@@ -26,7 +25,7 @@ bearer = HTTPBearer(auto_error=False)
 
 
 def issue_access_token(user_id: UUID, ttl: timedelta = timedelta(hours=12)) -> str:
-    """Sign a session token. Used by seed and load-test scripts until P1 ships login."""
+    """Sign a session token. Used by the login endpoints and by the seed and load-test scripts."""
     settings = get_settings()
     now = datetime.now(UTC)
     claims = {"sub": str(user_id), "iat": now, "exp": now + ttl}
