@@ -160,7 +160,7 @@ Do not commit secrets, identity documents, exact addresses, real payment data or
 
 Contributors must communicate respectfully, review ideas rather than people, acknowledge others' work and maintain academic integrity. Harassment, discrimination, plagiarism and disclosure of private information are not acceptable.
 
-This is a prototype, not a production marketplace. It does not provide identity verification, insurance, real payment processing or a completed legal/privacy review.
+This is a prototype. It is not a production marketplace. It does not provide identity verification, insurance, real payment processing or a completed legal/privacy review.
 
 ## Licence
 
