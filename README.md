@@ -4,6 +4,23 @@
 
 This is the master project document. Folder-specific details live only in the short README inside each primary implementation folder.
 
+## Live environment
+
+Staging runs on AWS (ap-southeast-1) behind CloudFront, over HTTPS:
+
+| What | URL |
+| --- | --- |
+| Web application | <https://d2qlmvfhlu3k82.cloudfront.net> |
+| Browse listings | <https://d2qlmvfhlu3k82.cloudfront.net/search> |
+| Log in / sign up | <https://d2qlmvfhlu3k82.cloudfront.net/login> |
+| API documentation | <https://d2qlmvfhlu3k82.cloudfront.net/docs> |
+| OpenAPI contract | <https://d2qlmvfhlu3k82.cloudfront.net/openapi.json> |
+| API health | <https://d2qlmvfhlu3k82.cloudfront.net/health> |
+
+Try it with a seeded account: `seed-02@passit.demo` with password `passit-demo-2026` (any of `seed-01` to `seed-20` works), or create your own account. Payments are simulated, and the fee hold after handover is 1 minute on staging so a release can be seen straight away.
+
+The separate evaluator-facing **demo** environment is defined in `infra/terraform/environments/demo/` but not deployed yet. Architecture, deploys and how to rebuild an environment are in [`infra/README.md`](infra/README.md).
+
 ## Start locally
 
 The supported local environment is Docker Compose:
@@ -19,7 +36,7 @@ docker compose up --build
 
 Compose waits for PostgreSQL, applies pending Alembic migrations, and then starts the API and web application.
 
-Load demo data (20 users, 40 listings, 15 bookings across every state). The command prints session tokens to use until login ships:
+Load demo data (20 users, 40 listings, 15 bookings across every state). Sign in as `seed-01@passit.demo` to `seed-20@passit.demo` with password `passit-demo-2026`; the command also prints session tokens for scripts:
 
 ```bash
 docker compose exec api python -m scripts.seed --reset
