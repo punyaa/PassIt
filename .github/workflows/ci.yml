@@ -17,6 +17,23 @@ jobs:
     name: FastAPI contract and tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: passit
+          POSTGRES_PASSWORD: passit
+          POSTGRES_DB: passit
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U passit -d passit"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PASSIT_TEST_DATABASE_URL: postgresql+psycopg://passit:passit@localhost:5432/passit_test
+      PASSIT_REQUIRE_DB_TESTS: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -28,7 +45,7 @@ jobs:
         run: uv sync --project api --dev --locked
       - name: Lint API
         run: uv run --directory api ruff check .
-      - name: Test API
+      - name: Test API (migrations, contention and ledger tests run against PostgreSQL)
         run: uv run --directory api pytest
       - name: Verify committed OpenAPI contract
         run: |

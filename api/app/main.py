@@ -1,21 +1,43 @@
+import asyncio
+import contextlib
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth.router import router as auth_router
+from app.bookings.availability import router as availability_router
 from app.bookings.router import router as bookings_router
 from app.catalogue.router import router as catalogue_router
 from app.core.config import get_settings
+from app.media.local_router import router as local_media_router
 from app.media.router import router as media_router
 from app.reviews.router import router as reviews_router
 from app.schemas import HealthResponse
+from app.transactions.release import run_local_sweep
 from app.transactions.router import router as transactions_router
 
 settings = get_settings()
 
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    sweep = None
+    if settings.local_release_sweep_seconds > 0:
+        sweep = asyncio.create_task(run_local_sweep(settings.local_release_sweep_seconds))
+    yield
+    if sweep:
+        sweep.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await sweep
+
+
 app = FastAPI(
     title="PassIt API",
     summary="Contract-first API for the PassIt peer-to-peer rental prototype.",
-    version="0.1.0",
+    version="0.2.0",
+    lifespan=lifespan,
 )
 app.add_middleware(
     CORSMiddleware,
@@ -33,7 +55,9 @@ async def health() -> HealthResponse:
 
 app.include_router(auth_router, prefix="/v1")
 app.include_router(catalogue_router, prefix="/v1")
+app.include_router(availability_router, prefix="/v1")
 app.include_router(media_router, prefix="/v1")
+app.include_router(local_media_router, prefix="/v1")
 app.include_router(bookings_router, prefix="/v1")
 app.include_router(reviews_router, prefix="/v1")
 app.include_router(transactions_router, prefix="/v1")

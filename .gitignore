@@ -40,3 +40,6 @@ data/*.json
 # Local artifacts
 tmp/
 output/
+
+# Local media uploads (PASSIT_STORAGE_BACKEND=local)
+.media/

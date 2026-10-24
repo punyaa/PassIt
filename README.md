@@ -19,6 +19,12 @@ docker compose up --build
 
 Compose waits for PostgreSQL, applies pending Alembic migrations, and then starts the API and web application.
 
+Load demo data (20 users, 40 listings, 15 bookings across every state). The command prints session tokens to use until login ships:
+
+```bash
+docker compose exec api python -m scripts.seed --reset
+```
+
 For native development:
 
 ```bash

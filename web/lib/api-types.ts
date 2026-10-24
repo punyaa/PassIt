@@ -45,10 +45,73 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /** List Bookings */
+        get: operations["listBookings"];
+        put?: never;
+        /**
+         * Create Booking
+         * @description Book dates instantly. The exclusion constraint `no_overlap` is the only guard against
+         *     double-booking: there is no check-then-insert, so concurrent requests for the same dates
+         *     produce exactly one 201 and 409 for the rest.
+         */
+        post: operations["createBooking"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bookings/{booking_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Booking */
+        get: operations["getBooking"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bookings/{booking_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
         get?: never;
         put?: never;
-        /** Create Booking */
-        post: operations["createBooking"];
+        /**
+         * Cancel Booking
+         * @description Cancel before handover. Both holds are refunded and the dates are freed.
+         */
+        post: operations["cancelBooking"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bookings/{booking_id}/checklists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Booking Checklists
+         * @description Handover and return evidence side by side, for the damage comparison screen.
+         */
+        get: operations["getBookingChecklists"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -64,7 +127,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Report Booking Damage */
+        /**
+         * Report Booking Damage
+         * @description Lender reports damage after comparing handover and return evidence. The deposit is
+         *     split by fixed tier: minor 20%, moderate 40%, severe 70%, total 100% to the lender.
+         *
+         *     Prototype simplification: the plan has an admin choose the tier; with no admin role
+         *     yet, the lender's tier is applied directly.
+         */
         post: operations["reportBookingDamage"];
         delete?: never;
         options?: never;
@@ -81,7 +151,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Handover Booking */
+        /**
+         * Handover Booking
+         * @description Record the handover checklist and condition photos, and start the fee hold timer.
+         */
         post: operations["handoverBooking"];
         delete?: never;
         options?: never;
@@ -96,7 +169,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Booking Ledger */
+        /**
+         * Get Booking Ledger
+         * @description Every simulated money movement for a booking; each event sums to zero.
+         */
         get: operations["getBookingLedger"];
         put?: never;
         post?: never;
@@ -115,8 +191,31 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Return Booking */
+        /**
+         * Return Booking
+         * @description Record the return checklist and photos. The lender then settles the deposit.
+         */
         post: operations["returnBooking"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/bookings/{booking_id}/settle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Settle Booking
+         * @description Lender confirms the item came back fine: the full deposit is refunded.
+         */
+        post: operations["settleBooking"];
         delete?: never;
         options?: never;
         head?: never;
@@ -130,7 +229,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Dashboard */
+        /**
+         * Get Dashboard
+         * @description Aggregates for the borrower (savings) and lender (earnings) dashboards.
+         *
+         *     Savings is an estimate: the listing deposit stands in for the item's replacement
+         *     value, so savings = sum(max(deposit - fee, 0)) over non-cancelled rentals.
+         */
         get: operations["getDashboard"];
         put?: never;
         post?: never;
@@ -147,7 +252,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Listings */
+        /**
+         * List Listings
+         * @description Search active listings. `from`/`to` keep only listings free for the whole range.
+         */
         get: operations["listListings"];
         put?: never;
         /** Create Listing */
@@ -158,15 +266,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/listings/{listing_id}/availability": {
+    "/v1/listings/mine": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Listing Availability */
-        get: operations["getListingAvailability"];
+        /** List My Listings */
+        get: operations["listMyListings"];
         put?: never;
         post?: never;
         delete?: never;
@@ -175,7 +283,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/listings/{listing_id}/price-suggestion": {
+    "/v1/listings/mrt-stations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Mrt Stations
+         * @description Stations available for the location filter and the listing-form fallback.
+         */
+        get: operations["listMrtStations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/listings/price-suggestion": {
         parameters: {
             query?: never;
             header?: never;
@@ -184,8 +312,75 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Suggest Listing Price */
+        /**
+         * Suggest Listing Price
+         * @description Suggest day/week/month prices before the listing exists. Falls back to a
+         *     median-based heuristic whenever the model is unavailable, slow or invalid.
+         */
         post: operations["suggestListingPrice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/listings/{listing_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Listing */
+        get: operations["getListing"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Listing */
+        patch: operations["updateListing"];
+        trace?: never;
+    };
+    "/v1/listings/{listing_id}/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Listing Availability
+         * @description Advisory view for the date picker. The booking insert re-checks atomically.
+         */
+        get: operations["getListingAvailability"];
+        /**
+         * Set Listing Availability
+         * @description Replace the listing's open windows. Existing bookings are unaffected.
+         */
+        put: operations["setListingAvailability"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/media": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attach Listing Media
+         * @description Attach an uploaded photo to one of your listings. Booking evidence is attached
+         *     through the handover and return checklists instead.
+         */
+        post: operations["attachListingMedia"];
         delete?: never;
         options?: never;
         head?: never;
@@ -201,7 +396,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Presign Media Upload */
+        /**
+         * Presign Media Upload
+         * @description Issue a short-lived direct-upload URL. PUT the file there with the given headers,
+         *     then attach the key to a listing (`POST /media`, or `photo_keys` on listing creation)
+         *     or to a handover/return checklist (`media_keys`).
+         */
         post: operations["presignMediaUpload"];
         delete?: never;
         options?: never;
@@ -216,9 +416,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * List Reviews
+         * @description Reviews received by a user, newest first.
+         */
+        get: operations["listReviews"];
         put?: never;
-        /** Create Review */
+        /**
+         * Create Review
+         * @description Two-sided: the borrower reviews the lender and the lender reviews the borrower,
+         *     once each per booking, after the item is returned.
+         */
         post: operations["createReview"];
         delete?: never;
         options?: never;
@@ -232,8 +440,16 @@ export interface components {
     schemas: {
         /** AvailabilityResponse */
         AvailabilityResponse: {
-            /** Available */
+            /**
+             * Available
+             * @description True when the whole range can be booked.
+             */
             available: boolean;
+            /**
+             * Booked
+             * @description Booked ranges overlapping the query.
+             */
+            booked: components["schemas"]["DateWindow"][];
             /**
              * From Date
              * Format: date
@@ -249,14 +465,35 @@ export interface components {
              * Format: date
              */
             to_date: string;
+            /**
+             * Windows
+             * @description Lender-declared open windows.
+             */
+            windows: components["schemas"]["DateWindow"][];
+        };
+        /** AvailabilityUpdate */
+        AvailabilityUpdate: {
+            /** Windows */
+            windows: components["schemas"]["DateWindow"][];
         };
         /** Booking */
         Booking: {
+            /** Available Actions */
+            available_actions: ("handover" | "cancel" | "return" | "settle" | "report_damage" | "review")[];
             /**
              * Borrower Id
              * Format: uuid
              */
             borrower_id: string;
+            /** Cancelled At */
+            cancelled_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Damage Severity */
+            damage_severity?: ("none" | "minor" | "moderate" | "severe" | "total") | null;
             /** Deposit */
             deposit: string;
             /**
@@ -271,16 +508,36 @@ export interface components {
             end_date: string;
             /** Fee */
             fee: string;
+            /** Fee Release At */
+            fee_release_at?: string | null;
+            /**
+             * Fee Released
+             * @default false
+             */
+            fee_released: boolean;
+            /** Handed Over At */
+            handed_over_at?: string | null;
             /**
              * Id
              * Format: uuid
              */
             id: string;
             /**
+             * Lender Id
+             * Format: uuid
+             */
+            lender_id: string;
+            /**
              * Listing Id
              * Format: uuid
              */
             listing_id: string;
+            /** Listing Title */
+            listing_title: string;
+            /** Returned At */
+            returned_at?: string | null;
+            /** Settled At */
+            settled_at?: string | null;
             /**
              * Start Date
              * Format: date
@@ -291,6 +548,11 @@ export interface components {
              * @enum {string}
              */
             state: "requested" | "confirmed" | "handed_over" | "returned" | "settled" | "cancelled" | "disputed";
+            /**
+             * Viewer Role
+             * @enum {string}
+             */
+            viewer_role: "borrower" | "lender";
         };
         /** BookingCreate */
         BookingCreate: {
@@ -322,11 +584,30 @@ export interface components {
             /** Label */
             label: string;
         };
+        /** ChecklistRecord */
+        ChecklistRecord: {
+            /** Items */
+            items: components["schemas"]["ChecklistItem"][];
+            /** Media Urls */
+            media_urls: string[];
+            /** Signed At */
+            signed_at: string | null;
+            /** Signed By */
+            signed_by: string | null;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "handover" | "return";
+        };
         /** ChecklistSubmission */
         ChecklistSubmission: {
             /** Items */
             items: components["schemas"]["ChecklistItem"][];
-            /** Media Keys */
+            /**
+             * Media Keys
+             * @description Condition photos uploaded via POST /media/presign for this stage.
+             */
             media_keys: string[];
         };
         /** DamageSubmission */
@@ -339,12 +620,21 @@ export interface components {
              */
             severity: "minor" | "moderate" | "severe" | "total";
         };
-        /** Dashboard */
+        /**
+         * Dashboard
+         * @description Money figures are simulated ledger totals in SGD; no real payments move.
+         */
         Dashboard: {
+            /** Active Rentals */
+            active_rentals: number;
             /** Completed Rentals */
             completed_rentals: number;
+            /** Deposits Held */
+            deposits_held: string;
             /** Earnings */
             earnings: string;
+            /** Pending Release */
+            pending_release: string;
             /**
              * Role
              * @enum {string}
@@ -352,6 +642,21 @@ export interface components {
             role: "borrower" | "lender";
             /** Savings */
             savings: string;
+            /** Total Spent */
+            total_spent: string;
+        };
+        /** DateWindow */
+        DateWindow: {
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -378,12 +683,21 @@ export interface components {
             /** Amount */
             amount: string;
             /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
              * Entry Type
              * @enum {string}
              */
             entry_type: "hold_fee" | "hold_deposit" | "release_fee" | "refund_deposit" | "damage_payout";
         };
-        /** Listing */
+        /**
+         * Listing
+         * @description Public listing card. Location is the nearest MRT station and planning area only;
+         *     exact addresses and postal codes are never stored or exposed.
+         */
         Listing: {
             /** Category */
             category: string;
@@ -391,6 +705,8 @@ export interface components {
             condition: string;
             /** Deposit */
             deposit: string;
+            /** Description */
+            description?: string | null;
             /**
              * Id
              * Format: uuid
@@ -398,6 +714,16 @@ export interface components {
             id: string;
             /** Mrt Station */
             mrt_station?: string | null;
+            /**
+             * Owner Id
+             * Format: uuid
+             */
+            owner_id: string;
+            /**
+             * Photo Urls
+             * @default []
+             */
+            photo_urls: string[];
             /** Planning Area */
             planning_area?: string | null;
             /** Price Day */
@@ -406,19 +732,38 @@ export interface components {
             price_month?: string | null;
             /** Price Week */
             price_week?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused" | "archived";
             /** Title */
             title: string;
         };
         /** ListingCreate */
         ListingCreate: {
+            /**
+             * Availability
+             * @description Open windows. Defaults to the next 365 days.
+             */
+            availability?: components["schemas"]["DateWindow"][] | null;
             /** Category */
             category: string;
             /** Condition */
             condition: string;
             /** Deposit */
             deposit: number | string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Mrt Station
+             * @description Used when no postal code is given or geocoding fails.
+             */
+            mrt_station?: string | null;
+            /** Photo Keys */
+            photo_keys?: string[];
             /** Postal Code */
-            postal_code: string;
+            postal_code?: string | null;
             /** Price Day */
             price_day: number | string;
             /** Price Month */
@@ -427,6 +772,111 @@ export interface components {
             price_week?: number | string | null;
             /** Title */
             title: string;
+        };
+        /** ListingDetail */
+        ListingDetail: {
+            /** Category */
+            category: string;
+            /** Condition */
+            condition: string;
+            /** Deposit */
+            deposit: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Mrt Station */
+            mrt_station?: string | null;
+            /** Owner Display Name */
+            owner_display_name: string;
+            /**
+             * Owner Id
+             * Format: uuid
+             */
+            owner_id: string;
+            /** Owner Rating */
+            owner_rating?: number | null;
+            /**
+             * Owner Review Count
+             * @default 0
+             */
+            owner_review_count: number;
+            /**
+             * Photo Urls
+             * @default []
+             */
+            photo_urls: string[];
+            /** Planning Area */
+            planning_area?: string | null;
+            /** Price Day */
+            price_day: string;
+            /** Price Month */
+            price_month?: string | null;
+            /** Price Week */
+            price_week?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused" | "archived";
+            /** Title */
+            title: string;
+        };
+        /** ListingUpdate */
+        ListingUpdate: {
+            /** Condition */
+            condition?: string | null;
+            /** Deposit */
+            deposit?: number | string | null;
+            /** Description */
+            description?: string | null;
+            /** Price Day */
+            price_day?: number | string | null;
+            /** Price Month */
+            price_month?: number | string | null;
+            /** Price Week */
+            price_week?: number | string | null;
+            /** Status */
+            status?: ("active" | "paused" | "archived") | null;
+            /** Title */
+            title?: string | null;
+        };
+        /** MediaCreate */
+        MediaCreate: {
+            /** Key */
+            key: string;
+            /**
+             * Listing Id
+             * Format: uuid
+             */
+            listing_id: string;
+        };
+        /** MediaRecord */
+        MediaRecord: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Key */
+            key: string;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "listing" | "handover" | "return";
+            /** Url */
+            url: string;
+        };
+        /** MrtStation */
+        MrtStation: {
+            /** Name */
+            name: string;
+            /** Planning Area */
+            planning_area: string;
         };
         /** PresignRequest */
         PresignRequest: {
@@ -445,6 +895,10 @@ export interface components {
         PresignResponse: {
             /** Expires In Seconds */
             expires_in_seconds: number;
+            /** Headers */
+            headers: {
+                [key: string]: string;
+            };
             /** Key */
             key: string;
             /** Upload Url */
@@ -463,12 +917,26 @@ export interface components {
         PriceSuggestion: {
             day: components["schemas"]["PriceBand"];
             month: components["schemas"]["PriceBand"];
-            /** Source */
-            source: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "llm" | "heuristic" | "cache";
             week: components["schemas"]["PriceBand"];
+        };
+        /** PriceSuggestionRequest */
+        PriceSuggestionRequest: {
+            /** Category */
+            category: string;
+            /** Condition */
+            condition: string;
+            /** Title */
+            title: string;
         };
         /** Review */
         Review: {
+            /** Author Display Name */
+            author_display_name: string;
             /**
              * Author Id
              * Format: uuid
@@ -481,6 +949,11 @@ export interface components {
             booking_id: string;
             /** Comment */
             comment?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
             /**
              * Id
              * Format: uuid
@@ -505,11 +978,6 @@ export interface components {
             comment?: string | null;
             /** Rating */
             rating: number;
-            /**
-             * Target Id
-             * Format: uuid
-             */
-            target_id: string;
         };
         /** SessionRequest */
         SessionRequest: {
@@ -603,18 +1071,95 @@ export interface operations {
             };
         };
     };
+    listBookings: {
+        parameters: {
+            query?: {
+                role?: "borrower" | "lender" | "all";
+                state?: ("requested" | "confirmed" | "handed_over" | "returned" | "settled" | "cancelled" | "disputed") | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     createBooking: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
         };
         requestBody: {
             content: {
                 "application/json": components["schemas"]["BookingCreate"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
+            };
+            /** @description Dates already booked or outside availability */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getBooking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -636,6 +1181,72 @@ export interface operations {
             };
         };
     };
+    cancelBooking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getBookingChecklists: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChecklistRecord"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     reportBookingDamage: {
         parameters: {
             query?: never;
@@ -643,7 +1254,9 @@ export interface operations {
             path: {
                 booking_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -678,7 +1291,9 @@ export interface operations {
             path: {
                 booking_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -713,7 +1328,9 @@ export interface operations {
             path: {
                 booking_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -744,7 +1361,9 @@ export interface operations {
             path: {
                 booking_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -772,12 +1391,49 @@ export interface operations {
             };
         };
     };
-    getDashboard: {
+    settleBooking: {
         parameters: {
             query?: never;
             header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getDashboard: {
+        parameters: {
+            query?: {
+                role?: "borrower" | "lender";
+            };
+            header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -790,15 +1446,30 @@ export interface operations {
                     "application/json": components["schemas"]["Dashboard"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     listListings: {
         parameters: {
             query?: {
                 q?: string | null;
+                category?: string | null;
                 mrt?: string | null;
+                planning_area?: string | null;
+                min_price?: number | string | null;
+                max_price?: number | string | null;
                 from?: string | null;
                 to?: string | null;
+                limit?: number;
+                offset?: number;
             };
             header?: never;
             path?: never;
@@ -831,11 +1502,99 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
         };
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ListingCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListingDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listMyListings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Listing"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listMrtStations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MrtStation"][];
+                };
+            };
+        };
+    };
+    suggestListingPrice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PriceSuggestionRequest"];
             };
         };
         responses: {
@@ -845,7 +1604,75 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Listing"];
+                    "application/json": components["schemas"]["PriceSuggestion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getListing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listing_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListingDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    updateListing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listing_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ListingUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListingDetail"];
                 };
             };
             /** @description Validation Error */
@@ -893,16 +1720,22 @@ export interface operations {
             };
         };
     };
-    suggestListingPrice: {
+    setListingAvailability: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 listing_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AvailabilityUpdate"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -910,7 +1743,42 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PriceSuggestion"];
+                    "application/json": components["schemas"]["AvailabilityResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attachListingMedia: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MediaCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediaRecord"];
                 };
             };
             /** @description Validation Error */
@@ -929,7 +1797,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -957,12 +1827,46 @@ export interface operations {
             };
         };
     };
+    listReviews: {
+        parameters: {
+            query: {
+                user_id: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     createReview: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -971,7 +1875,7 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };
