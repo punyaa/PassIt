@@ -19,7 +19,6 @@ Both target `ap-southeast-1`. Do not create production resources for the four-we
 | `s3-cloudfront` | Private media bucket and the CloudFront distribution that fronts the whole site. |
 | `release-scheduler` | EventBridge schedule group, fee-release Lambda (container image), roles. |
 | `monitoring` | Alarms, dashboard, USD 35 monthly budget, alert topic. |
-| `nightly-shutdown` | Optional 21:00 to 09:00 SGT stop and start. Off by default (`enable_nightly_shutdown`). |
 | `github-oidc` | Deploy role GitHub Actions assumes through OIDC. No stored AWS keys. |
 
 ## Bootstrap (once per AWS account)
@@ -67,7 +66,7 @@ Building `demo` in the same account as `staging`: leave `create_github_oidc_prov
 ## Day-to-day
 
 - CI (`.github/workflows/deploy-staging.yml`) builds, migrates and deploys the API, web app and fee-release Lambda on every merge to `main`. It assumes the staging deploy role through OIDC with no setup. Set the repository variable `AWS_DEPLOY_ROLE_ARN` only to deploy to a different AWS account.
-- Services ignore task-definition changes in Terraform because CI owns them. After a `terraform apply` that replaces a task definition, re-register it with the current image and run `aws ecs update-service`.
+- Terraform ignores task-definition changes on the ECS services and the image of the fee-release Lambda, because CI owns them. After a `terraform apply` that replaces a task definition, re-register it with the current image and run `aws ecs update-service`.
 - Watch a deploy: ECS, cluster, service, Deployments tab. Logs: CloudWatch `/ecs/passit-<env>-api`. Dashboard: `passit-<env>`.
 
 ## Known limits

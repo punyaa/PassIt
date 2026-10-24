@@ -465,11 +465,6 @@ resource "aws_appautoscaling_target" "api" {
   resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.api.name}"
   min_capacity       = var.api_min_capacity
   max_capacity       = var.api_max_capacity
-
-  # The nightly schedule moves min/max, so Terraform must not fight it.
-  lifecycle {
-    ignore_changes = [min_capacity, max_capacity]
-  }
 }
 
 resource "aws_appautoscaling_policy" "api_cpu" {

@@ -117,21 +117,6 @@ module "monitoring" {
   alert_emails                = var.alert_emails
 }
 
-# Off by default: evaluators can open the demo at any hour. Switch on with
-# -var enable_nightly_shutdown=true to save credits between sessions.
-module "nightly_shutdown" {
-  source = "../../modules/nightly-shutdown"
-  count  = var.enable_nightly_shutdown ? 1 : 0
-
-  environment      = "demo"
-  aws_region       = var.aws_region
-  cluster_name     = module.ecs_alb.cluster_name
-  api_service_name = module.ecs_alb.api_service_name
-  web_service_name = module.ecs_alb.web_service_name
-  rds_instance_id  = module.rds.instance_identifier
-  start_days       = var.start_days
-}
-
 module "cdn" {
   source = "../../modules/s3-cloudfront"
 

@@ -78,6 +78,12 @@ resource "aws_lambda_function" "release" {
   }
 
   depends_on = [aws_cloudwatch_log_group.release, aws_iam_role_policy_attachment.lambda_vpc]
+
+  # CI ships a new image on every deploy (like the ECS task definitions), so Terraform only
+  # sets the first one and must not roll the function back to it.
+  lifecycle {
+    ignore_changes = [image_uri]
+  }
 }
 
 data "aws_iam_policy_document" "scheduler_assume" {
