@@ -1,7 +1,7 @@
 # Bootstrap owner until the six GitHub handles are confirmed.
 * @punyaa
 
-# P1 Platform: cloud, Docker, CI/CD, monitoring and backend authentication.
+# Platform: cloud, Docker, CI/CD, monitoring and backend authentication.
 /.github/ @punyaa
 /compose.yaml @punyaa
 /infra/ @punyaa
@@ -21,6 +21,6 @@
 /api/app/media/ @punyaa
 /scripts/seed/ @punyaa
 
-# F1 owns shared frontend components; F1 and F2 split route ownership in web/README.md.
+# Front core owns shared frontend components; Front core and F2 split route ownership in web/README.md.
 /web/components/ @punyaa
 /web/app/ @punyaa

@@ -1,20 +1,20 @@
-import { apiPost, type Schemas } from "./api-client";
+import { apiPost, apiRequest, type Schemas } from "./api-client";
 
 export function logIn(email: string, password: string) {
   return apiPost<Schemas["SessionResponse"]>("/auth/session", { email, password });
 }
 
-/**
- * TODO(P1): the sign-up endpoint is not in the OpenAPI contract yet. This assumes
- * `POST /auth/users` that creates the user and sets the session cookie; rename it here
- * once P1 adds the real operation, then regenerate api-types.
- */
 export function signUp(displayName: string, email: string, password: string) {
-  return apiPost<Schemas["SessionResponse"]>("/auth/users", {
+  return apiPost<Schemas["SessionResponse"]>("/auth/signup", {
     display_name: displayName,
     email,
     password,
   });
+}
+
+/** Ends the API session (clears the httpOnly cookie, which only the API can do). */
+export function logOut() {
+  return apiRequest<void>("/auth/session", { method: "DELETE" });
 }
 
 export async function devSignIn(token: string): Promise<void> {

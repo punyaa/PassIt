@@ -62,3 +62,28 @@ async def test_duplicate_release_deliveries_release_once(client, make_user, sql)
         booking["id"],
     )
     assert released[0][0] == 2  # one balanced pair
+
+
+async def test_deadlock_between_overlapping_requests_is_a_conflict_not_a_500(
+    client, make_user, monkeypatch
+):
+    """PostgreSQL aborts one of two concurrently overlapping inserts with a deadlock error.
+    That request lost the dates, so it must answer 409 like any other conflict."""
+    from sqlalchemy.exc import OperationalError
+
+    from app.transactions import service as ledger_service
+
+    class Deadlock(Exception):
+        sqlstate = "40P01"
+
+    async def deadlocked(*_args, **_kwargs):
+        raise OperationalError("INSERT", {}, Deadlock())
+
+    lender, borrower = make_user("Lena"), make_user("Ben")
+    listing = await create_listing(client, lender)
+    monkeypatch.setattr(ledger_service, "hold_funds", deadlocked)
+
+    response = await book(client, borrower, listing["id"], 0, 2)
+
+    assert response.status_code == 409, response.text
+    assert response.json()["detail"] == "Those dates are already booked"

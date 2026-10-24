@@ -1,1 +1,1 @@
-"""Shared configuration and infrastructure helpers owned by P1."""
+"""Shared configuration and infrastructure helpers owned by the Platform stream."""

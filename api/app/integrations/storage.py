@@ -6,7 +6,7 @@ presigned URL. Locally, `LocalStorage` imitates that flow with a signed PUT to t
 
 Switch with PASSIT_STORAGE_BACKEND=local|s3.
 
-P1/B3 hand-off for S3 (see api/README.md, "AWS hand-off"):
+Platform/B3 hand-off for S3 (see api/README.md, "AWS hand-off"):
   1. Terraform the bucket (block public access, CORS allowing PUT from the web origin),
      optionally a CloudFront distribution with Origin Access Control.
   2. Grant the ECS task role s3:PutObject and s3:GetObject on `<bucket>/<prefix>*`.
@@ -63,17 +63,25 @@ class LocalStorage:
 
 
 class S3Storage:
-    """AWS implementation. UNVERIFIED until P1 runs it against the real bucket."""
+    """AWS implementation, verified against the staging bucket."""
 
     def __init__(self, settings: Settings) -> None:
         if not settings.s3_bucket:
             raise RuntimeError("PASSIT_S3_BUCKET is required when PASSIT_STORAGE_BACKEND=s3")
         try:
             import boto3  # noqa: PLC0415 - optional dependency until AWS is provisioned
+            from botocore.config import Config  # noqa: PLC0415
         except ImportError as error:
             raise RuntimeError("Add boto3: `uv add --project api boto3`") from error
         session = boto3.Session(profile_name=settings.aws_profile or None)
-        self.client = session.client("s3", region_name=settings.aws_region)
+        # SigV4 against the regional endpoint. The default presigns with SigV2 against the
+        # global endpoint, which S3 answers with a 307 redirect that a browser refuses to
+        # follow on a cross-origin PUT.
+        self.client = session.client(
+            "s3",
+            region_name=settings.aws_region,
+            config=Config(signature_version="s3v4", s3={"addressing_style": "virtual"}),
+        )
         self.settings = settings
 
     def presign_upload(self, key: str, content_type: str) -> PresignedUpload:
@@ -86,7 +94,7 @@ class S3Storage:
         return PresignedUpload(url, ttl, {"content-type": content_type})
 
     def view_url(self, key: str) -> str:
-        # TODO(P1): condition evidence is private. If CloudFront serves media, switch this to
+        # TODO: condition evidence is private. If CloudFront serves media, switch this to
         # CloudFront signed URLs (botocore.signers.CloudFrontSigner) rather than public paths.
         if self.settings.cloudfront_domain:
             return f"https://{self.settings.cloudfront_domain}/{key}"

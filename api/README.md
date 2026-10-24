@@ -2,11 +2,11 @@
 
 FastAPI backend owned across four streams:
 
-- `app/auth/` — P1 Platform
+- `app/auth/` — Platform
 - `app/catalogue/` and `app/media/` — B3 Catalogue
 - `app/bookings/` and `app/reviews/` — B1 Booking
 - `app/transactions/` — B2 Transactions
-- `app/integrations/` — external services (S3, EventBridge, Bedrock/LLM, OneMap); AWS parts handed to P1
+- `app/integrations/` — external services (S3, EventBridge, Bedrock/LLM, OneMap); AWS parts handed to Platform
 
 `app/models.py` mirrors the Alembic schema for queries; migrations remain the source of truth.
 
@@ -65,13 +65,24 @@ Prototype simplifications to revisit:
 - Borrower "savings" treats the listing deposit as the item's replacement value.
 - `app/catalogue/mrt_stations.py` is a curated subset of about 70 stations with approximate coordinates.
 
-## Authentication (P1)
+## Authentication
 
-`app/auth/dependencies.py` provides a **temporary** `current_user` dependency. It accepts an HS256 JWT (`sub` = user id) from `Authorization: Bearer` or the `passit_session` cookie. Domain routers only depend on `CurrentUser`, so P1 can replace it without touching them. Sign-up, login (`POST /auth/session`) and password hashing are still P1's to build. Until then, use the tokens printed by the seed script.
+Accounts use an email and password, stored as argon2id hashes (`app/auth/passwords.py`).
+
+| Endpoint | Purpose |
+| --- | --- |
+| `POST /auth/signup` | Create an account (`email`, `password` of 8 to 128 characters, `display_name`) and start a session. `409` if the email is taken, ignoring case. |
+| `POST /auth/session` | Log in. The same `401` for a wrong password and an unknown email. |
+| `DELETE /auth/session` | Log out (clears the cookie). |
+| `GET /auth/me` | The signed-in user (`user_id`, `display_name`, `email`); `401` when signed out. |
+
+A session is an HS256 JWT signed with `PASSIT_JWT_SECRET`, valid for 12 hours, delivered as the `passit_session` **httpOnly** cookie (`Secure` when `PASSIT_SESSION_COOKIE_SECURE=true`, which staging and demo set because CloudFront serves HTTPS). Domain routers only depend on `CurrentUser`, which also accepts `Authorization: Bearer <jwt>` for scripts and load tests. Outside `PASSIT_ENVIRONMENT=development` the API refuses to start with the default secret. Note the variable is `PASSIT_ENVIRONMENT`, not `PASSIT_ENV`.
+
+Seed accounts sign in as `seed-01@passit.demo` to `seed-20@passit.demo` with password `passit-demo-2026`.
 
 ## AWS hand-off
 
-Everything runs locally with no AWS account. Each AWS integration has a working local backend plus an AWS implementation, selected by environment variables. The AWS implementations are written but **unverified** until they run against real resources. First add the SDK with `uv add --project api boto3`.
+Everything runs locally with no AWS account. Each AWS integration has a working local backend plus an AWS implementation, selected by environment variables. `boto3` is a dependency. Staging runs the S3 and EventBridge implementations; the status of each is listed below the table.
 
 | Integration | Local (default) | AWS switch | Owner checklist |
 | --- | --- | --- | --- |
@@ -81,3 +92,11 @@ Everything runs locally with no AWS account. Each AWS integration has a working 
 | Geocoding, `integrations/onemap.py` | Public OneMap search (rate-limited without a token) | `PASSIT_ONEMAP_TOKEN` | Register for a OneMap token so planning-area lookups work and rate limits are higher |
 
 Set `PASSIT_FEE_HOLD_MINUTES=1` in staging so demos show a real release instead of a mocked one.
+
+**Status on staging (checked end to end on 2026-10-24):**
+
+- **Storage:** works. A presigned `PUT` (SigV4, regional endpoint, CORS limited to the CloudFront origin) stores the object and `/media/*` through CloudFront returns identical bytes; direct bucket access is denied. A presigned URL can be reused until it expires, so a second `PUT` overwrites. Bucket versioning keeps the earlier copy and the API attaches each key only once.
+- **Fee release:** works. A one-off EventBridge schedule invokes `passit-staging-release`, which reaches RDS. The scheduler can deliver more than once (two runs 2 seconds apart were seen), and the handler is idempotent.
+- **Bedrock:** not enabled. `PASSIT_BEDROCK_MODEL_ID` is unset, so price suggestions use the heuristic. The task role already allows `bedrock:InvokeModel`.
+- **OneMap:** not exercised from AWS. Set `PASSIT_ONEMAP_TOKEN` for planning-area lookups.
+- **Evidence URLs** are unsigned CloudFront URLs: anyone holding a media key can read the photo. See the TODO in `integrations/storage.py`.

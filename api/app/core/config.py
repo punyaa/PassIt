@@ -1,7 +1,10 @@
 from functools import lru_cache
 from typing import Literal
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+DEFAULT_JWT_SECRET = "local-development-only-not-a-secret"
 
 
 class Settings(BaseSettings):
@@ -15,7 +18,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     database_url: str = "postgresql+psycopg://passit:passit@localhost:5432/passit"
     cors_origins: str = "http://localhost:3000"
-    jwt_secret: str = "local-development-only-not-a-secret"
+    jwt_secret: str = DEFAULT_JWT_SECRET
     jwt_algorithm: str = "HS256"
     session_cookie_secure: bool = False
 
@@ -46,14 +49,14 @@ class Settings(BaseSettings):
     # Database pooling. Tests use NullPool so connections never outlive an event loop.
     database_null_pool: bool = False
 
-    # Integration backends. "local" works with no AWS account; P1 switches staging/demo
-    # to the AWS implementations in app/integrations/ once the resources exist.
+    # Integration backends. "local" works with no AWS account; staging and demo switch to the
+    # AWS implementations in app/integrations/ once the resources exist.
     storage_backend: Literal["local", "s3"] = "local"
     scheduler_backend: Literal["local", "eventbridge"] = "local"
     public_api_url: str = "http://localhost:8000"
     local_media_dir: str = ".media"
 
-    # EventBridge Scheduler target for the fee-release Lambda (P1 provisions these).
+    # EventBridge Scheduler target for the fee-release Lambda (provisioned by Terraform).
     release_lambda_arn: str | None = None
     scheduler_role_arn: str | None = None
     scheduler_group_name: str = "default"
@@ -63,6 +66,15 @@ class Settings(BaseSettings):
     local_release_sweep_seconds: int = 30  # 0 disables the in-process sweep
     free_listing_limit: int = 3
     max_rental_days: int = 90
+
+    @model_validator(mode="after")
+    def reject_default_secret_outside_development(self) -> "Settings":
+        # Anyone can read the default from the repository and forge a session with it.
+        if self.environment != "development" and self.jwt_secret == DEFAULT_JWT_SECRET:
+            raise ValueError(
+                f"PASSIT_JWT_SECRET must be set when PASSIT_ENVIRONMENT={self.environment}"
+            )
+        return self
 
     @property
     def cors_origins_list(self) -> list[str]:

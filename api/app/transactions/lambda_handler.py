@@ -3,8 +3,8 @@
 Handler: app.transactions.lambda_handler.handler
 Event:   {"booking_id": "<uuid>"}  (set by EventBridgeScheduler.schedule_fee_release)
 
-P1 provisions the function (see app/integrations/scheduler.py). Raising lets EventBridge
-retry on transient database errors; the release itself is idempotent.
+Terraform provisions the function (see app/integrations/scheduler.py). Raising lets
+EventBridge retry on transient database errors; the release itself is idempotent.
 """
 
 import asyncio

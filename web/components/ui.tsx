@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 
-/* Shared PassIt primitives (F1). F2 screens import these rather than restyling. */
+/* Shared PassIt primitives (Front core). F2 screens import these rather than restyling. */
 
 type Variant = "primary" | "secondary" | "accent" | "ghost" | "danger";
 
