@@ -1,5 +1,16 @@
-import { ScreenPlaceholder } from "@/components/screen-placeholder";
+import { Suspense } from "react";
 
-export default function ListingDetailPage() {
-  return <ScreenPlaceholder title="Listing details" description="Review prices, condition, approximate location and date-aware availability." owner="F1 Front core" />;
+import { PageShell } from "@/components/page-shell";
+
+import { ListingView } from "./listing-view";
+
+export default async function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return (
+    <PageShell width="max-w-6xl">
+      <Suspense>
+        <ListingView id={id} />
+      </Suspense>
+    </PageShell>
+  );
 }

@@ -1,5 +1,19 @@
-import { ScreenPlaceholder } from "@/components/screen-placeholder";
+import { Suspense } from "react";
+
+import { LoginForm } from "@/components/auth-forms";
+import { PageShell } from "@/components/page-shell";
+import { PageHeader } from "@/components/ui";
+import { devLoginEnabled } from "@/lib/dev-login";
+
+export const dynamic = "force-dynamic";
 
 export default function LoginPage() {
-  return <ScreenPlaceholder title="Log in" description="Issue and validate the JWT session through the P1 authentication contract." owner="F1 Front core" />;
+  return (
+    <PageShell width="max-w-lg">
+      <PageHeader eyebrow="Welcome back" title="Log in" />
+      <Suspense>
+        <LoginForm devLogin={devLoginEnabled()} />
+      </Suspense>
+    </PageShell>
+  );
 }

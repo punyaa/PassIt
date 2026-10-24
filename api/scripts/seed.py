@@ -132,7 +132,8 @@ async def run(rng: random.Random) -> None:
                 "price_month": str(month) if month else None,
                 "deposit": str(deposit),
                 "mrt_station": station.name,
-                "photo_keys": [await upload_placeholder(client, auth(owner), "listing")],
+                # No listing photos: cards fall back to a category illustration. Seeded
+                # handovers and returns still upload placeholder evidence.
             }
             response = await client.post("/listings", json=payload, headers=auth(owner))
             response.raise_for_status()

@@ -1,36 +1,68 @@
 @import "tailwindcss";
 
+/* PassIt design tokens. Use the Tailwind utilities these generate
+   (bg-forest, text-muted, border-line, ...) instead of hex literals. */
+@theme {
+  --color-forest: #173f30;
+  --color-forest-light: #245b43;
+  --color-forest-soft: #f3f7f0;
+  --color-cream: #fffdf8;
+  --color-sand: #f7f6ef;
+  --color-orange: #f2a65f;
+  --color-orange-deep: #cb7540;
+  --color-sage: #dbe8d2;
+  --color-ink: #17352b;
+  --color-muted: #667c6e;
+  --color-line: #e5ece3;
+  --color-danger: #b4432f;
+  --color-danger-soft: #fbeae6;
+  --color-success: #2f7a4f;
+  --color-success-soft: #e6f3ea;
+  --color-info-soft: #eef4f8;
+
+  --radius-card: 1rem;
+}
+
 :root {
-  --forest: #173f30;
-  --forest-light: #245b43;
-  --cream: #fffdf8;
-  --orange: #f2a65f;
-  --sage: #dbe8d2;
-  --ink: #17352b;
+  --forest: var(--color-forest);
+  --forest-light: var(--color-forest-light);
+  --cream: var(--color-cream);
+  --orange: var(--color-orange);
+  --sage: var(--color-sage);
+  --ink: var(--color-ink);
 }
 
-* {
-  box-sizing: border-box;
-}
+/* Base styles live in a layer so Tailwind utilities (also layered) can override them. */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
 
-html {
-  scroll-behavior: smooth;
-}
+  html {
+    scroll-behavior: smooth;
+  }
 
-body {
-  margin: 0;
-  background: var(--cream);
-  color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
-}
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: Arial, Helvetica, sans-serif;
+  }
 
-button,
-input,
-select {
-  font: inherit;
-}
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
 
-a {
-  color: inherit;
-  text-decoration: none;
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-orange);
+    outline-offset: 2px;
+  }
 }

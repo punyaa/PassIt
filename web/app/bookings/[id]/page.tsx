@@ -1,5 +1,19 @@
-import { ScreenPlaceholder } from "@/components/screen-placeholder";
+import { Suspense } from "react";
 
-export default function BookingPage() {
-  return <ScreenPlaceholder title="Manage booking" description="Mirror the booking state machine and show only the action valid for the current state." owner="F1 Front core" />;
+import { PageShell } from "@/components/page-shell";
+import { RequireAuth } from "@/components/session";
+
+import { BookingView } from "./booking-view";
+
+export default async function BookingPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return (
+    <PageShell width="max-w-5xl">
+      <RequireAuth>
+        <Suspense>
+          <BookingView id={id} />
+        </Suspense>
+      </RequireAuth>
+    </PageShell>
+  );
 }
