@@ -50,7 +50,7 @@ The template explains which values are required, which are optional, and where e
 | App URLs and feature settings | Root `.env` | GitHub Environment variables or ECS task configuration |
 | JWT secret, provider tokens and MongoDB URI | Root `.env` | AWS Secrets Manager or SSM Parameter Store |
 | AWS Bedrock and S3 access | AWS SSO profile in `~/.aws` | ECS task IAM role |
-| Deployment role identifier | Not normally needed | GitHub repository variable `AWS_DEPLOY_ROLE_ARN`, an OIDC role, so no AWS keys are stored in GitHub |
+| Deployment role identifier | Not normally needed | An OIDC role named in `deploy-staging.yml` (override with the repository variable `AWS_DEPLOY_ROLE_ARN`), so no AWS keys are stored in GitHub |
 
 Rules:
 

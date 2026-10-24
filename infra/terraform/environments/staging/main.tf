@@ -114,21 +114,6 @@ module "monitoring" {
   alert_emails                = var.alert_emails
 }
 
-# Off by default: while staging is down, ALB health checks fail and CI deploys have nothing
-# to roll onto. Switch on with -var enable_nightly_shutdown=true to save credits.
-module "nightly_shutdown" {
-  source = "../../modules/nightly-shutdown"
-  count  = var.enable_nightly_shutdown ? 1 : 0
-
-  environment      = "staging"
-  aws_region       = var.aws_region
-  cluster_name     = module.ecs_alb.cluster_name
-  api_service_name = module.ecs_alb.api_service_name
-  web_service_name = module.ecs_alb.web_service_name
-  rds_instance_id  = module.rds.instance_identifier
-  start_days       = var.start_days
-}
-
 module "cdn" {
   source = "../../modules/s3-cloudfront"
 
@@ -161,7 +146,9 @@ module "github_oidc" {
   ecr_repository_arns = [
     module.ecs_alb.api_repository_arn,
     module.ecs_alb.web_repository_arn,
+    module.release_scheduler.repository_arn,
   ]
+  lambda_function_arns = compact([module.release_scheduler.lambda_arn])
   task_role_arns = [
     module.ecs_alb.task_role_arn,
     module.ecs_alb.execution_role_arn,

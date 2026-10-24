@@ -38,18 +38,6 @@ variable "alert_emails" {
   default     = []
 }
 
-variable "start_days" {
-  description = "Day-of-week field for the morning start of demo: * daily, MON-FRI weekdays."
-  type        = string
-  default     = "*"
-}
-
-variable "enable_nightly_shutdown" {
-  description = "Stop demo 21:00 to 09:00 SGT to save credits. Off so evaluators can always reach it."
-  type        = bool
-  default     = false
-}
-
 variable "create_github_oidc_provider" {
   description = "False when staging in the same account already created the GitHub OIDC provider."
   type        = bool

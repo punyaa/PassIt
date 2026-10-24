@@ -37,15 +37,3 @@ variable "alert_emails" {
   type        = list(string)
   default     = []
 }
-
-variable "start_days" {
-  description = "Day-of-week field for the morning start of staging: * daily, MON-FRI weekdays."
-  type        = string
-  default     = "*"
-}
-
-variable "enable_nightly_shutdown" {
-  description = "Stop staging 21:00 to 09:00 SGT to save credits. Off so teammates and CI can always reach it."
-  type        = bool
-  default     = false
-}

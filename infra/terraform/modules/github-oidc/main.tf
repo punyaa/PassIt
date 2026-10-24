@@ -59,7 +59,7 @@ resource "aws_iam_role_policy" "deploy" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
+    Statement = concat([
       {
         Sid      = "EcrLogin"
         Effect   = "Allow"
@@ -118,6 +118,13 @@ resource "aws_iam_role_policy" "deploy" {
         Action   = ["logs:GetLogEvents", "logs:DescribeLogStreams"]
         Resource = "arn:aws:logs:${var.aws_region}:${local.account_id}:log-group:/ecs/${local.name}-*:*"
       },
-    ]
+      ],
+      length(var.lambda_function_arns) == 0 ? [] : [{
+        Sid      = "UpdateReleaseLambda"
+        Effect   = "Allow"
+        Action   = ["lambda:UpdateFunctionCode", "lambda:GetFunction", "lambda:GetFunctionConfiguration"]
+        Resource = var.lambda_function_arns
+      }],
+    )
   })
 }
