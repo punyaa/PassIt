@@ -161,7 +161,9 @@ module "github_oidc" {
   ecr_repository_arns = [
     module.ecs_alb.api_repository_arn,
     module.ecs_alb.web_repository_arn,
+    module.release_scheduler.repository_arn,
   ]
+  lambda_function_arns = compact([module.release_scheduler.lambda_arn])
   task_role_arns = [
     module.ecs_alb.task_role_arn,
     module.ecs_alb.execution_role_arn,

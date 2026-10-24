@@ -18,3 +18,7 @@ output "lambda_arn" {
 output "lambda_function_name" {
   value = try(aws_lambda_function.release[0].function_name, null)
 }
+
+output "repository_arn" {
+  value = aws_ecr_repository.release.arn
+}

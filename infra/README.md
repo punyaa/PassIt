@@ -66,7 +66,7 @@ Building `demo` in the same account as `staging`: leave `create_github_oidc_prov
 
 ## Day-to-day
 
-- CI (`.github/workflows/deploy-staging.yml`) builds, migrates and deploys on every merge to `main`. Set the repository variable `AWS_DEPLOY_ROLE_ARN` to the `github_deploy_role_arn` output.
+- CI (`.github/workflows/deploy-staging.yml`) builds, migrates and deploys the API, web app and fee-release Lambda on every merge to `main`. It assumes the staging deploy role through OIDC with no setup. Set the repository variable `AWS_DEPLOY_ROLE_ARN` only to deploy to a different AWS account.
 - Services ignore task-definition changes in Terraform because CI owns them. After a `terraform apply` that replaces a task definition, re-register it with the current image and run `aws ecs update-service`.
 - Watch a deploy: ECS, cluster, service, Deployments tab. Logs: CloudWatch `/ecs/passit-<env>-api`. Dashboard: `passit-<env>`.
 

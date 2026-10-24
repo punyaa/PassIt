@@ -34,3 +34,9 @@ variable "task_role_arns" {
   description = "ECS execution and task roles the deploy role may pass to new task definitions."
   type        = list(string)
 }
+
+variable "lambda_function_arns" {
+  description = "Functions the deploy role may update with a new image (the fee-release Lambda)."
+  type        = list(string)
+  default     = []
+}

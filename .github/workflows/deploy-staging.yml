@@ -3,9 +3,10 @@ name: Deploy staging
 # Runs after CI passes on main. Builds ARM64 images (Fargate runs ARM), runs migrations as a
 # one-off ECS task inside the VPC, then rolls both services onto the new image.
 #
-# One-time setup: add the repository VARIABLE AWS_DEPLOY_ROLE_ARN (Settings > Secrets and
-# variables > Actions > Variables). Its value is the `github_deploy_role_arn` Terraform output.
-# No AWS access keys are stored in GitHub: the role is assumed through OIDC.
+# No AWS access keys are stored in GitHub: the role is assumed through OIDC, and its trust
+# policy only admits this repository's main branch. The role ARN is not a secret. To deploy to a
+# different AWS account, set the repository VARIABLE AWS_DEPLOY_ROLE_ARN to that account's
+# `github_deploy_role_arn` Terraform output; otherwise the staging role below is used.
 
 on:
   workflow_run:
@@ -27,6 +28,8 @@ env:
   CLUSTER: passit-staging
   API_REPO: passit-staging-api
   WEB_REPO: passit-staging-web
+  RELEASE_REPO: passit-staging-release
+  RELEASE_FUNCTION: passit-staging-release
 
 jobs:
   deploy:
@@ -44,7 +47,7 @@ jobs:
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN || 'arn:aws:iam::034313912472:role/passit-staging-github-deploy' }}
           aws-region: ${{ env.AWS_REGION }}
 
       - id: ecr
@@ -66,6 +69,9 @@ jobs:
           }
           push "$API_REPO" api
           push "$WEB_REPO" web --build-arg NEXT_PUBLIC_API_URL=/v1
+          # The fee-release Lambda runs the same app code, so it ships with every deploy.
+          # --provenance=false: Lambda cannot read the multi-platform manifest buildx adds.
+          push "$RELEASE_REPO" api -f api/Dockerfile.lambda --provenance=false
 
       - name: Register task definitions with the new image
         env:
@@ -81,9 +87,11 @@ jobs:
             aws ecs register-task-definition --cli-input-json "file:///tmp/$family.json" \
               --query taskDefinition.taskDefinitionArn --output text
           }
-          echo "API_TD=$(register passit-staging-api "$API_REPO")" >> "$GITHUB_ENV"
-          echo "MIGRATE_TD=$(register passit-staging-migrate "$API_REPO")" >> "$GITHUB_ENV"
-          echo "WEB_TD=$(register passit-staging-web "$WEB_REPO")" >> "$GITHUB_ENV"
+          {
+            echo "API_TD=$(register passit-staging-api "$API_REPO")"
+            echo "MIGRATE_TD=$(register passit-staging-migrate "$API_REPO")"
+            echo "WEB_TD=$(register passit-staging-web "$WEB_REPO")"
+          } >> "$GITHUB_ENV"
 
       - name: Run migrations
         run: |
@@ -110,6 +118,14 @@ jobs:
           aws ecs update-service --cluster "$CLUSTER" --service web --task-definition "$WEB_TD" >/dev/null
           # The deployment circuit breaker rolls back automatically if new tasks never go healthy.
           aws ecs wait services-stable --cluster "$CLUSTER" --services api web
+
+      - name: Update the fee-release Lambda
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          aws lambda update-function-code --function-name "$RELEASE_FUNCTION" \
+            --image-uri "$REGISTRY/$RELEASE_REPO:$TAG" --query LastUpdateStatus --output text
+          aws lambda wait function-updated --function-name "$RELEASE_FUNCTION"
 
       - name: Smoke test
         run: |
