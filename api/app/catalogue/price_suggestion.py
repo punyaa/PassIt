@@ -20,11 +20,21 @@ Item: {title}
 Category: {category}
 Condition: {condition}
 Comparable listings (daily prices): {comparables}
+
+STRICT PRICING RULES:
+- Longer rental periods must receive a bundle discount.
+- For EACH of min, recommended, and max:
+  - weekly price MUST be strictly less than 7 times the corresponding daily price
+  - monthly price MUST be strictly less than 4 times the corresponding weekly price
+- Aim for weekly pricing around 5 times daily pricing.
+- Aim for monthly pricing around 3 times weekly pricing.
+- NEVER calculate monthly pricing as 4 or more weeks.
+- Before answering, verify the inequalities above.
+
 Return ONLY JSON, no prose:
 {{"day": {{"min": 0, "recommended": 0, "max": 0}},
  "week": {{"min": 0, "recommended": 0, "max": 0}},
- "month": {{"min": 0, "recommended": 0, "max": 0}}}}
-Weekly rate must be below 7x daily; monthly below 4x weekly."""
+ "month": {{"min": 0, "recommended": 0, "max": 0}}}}"""
 
 # Used when a category has no comparable listings yet.
 CATEGORY_DEFAULT_DAY = Decimal("10.00")
