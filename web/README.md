@@ -41,15 +41,15 @@ The booking page mirrors the API's state machine. It renders whatever `available
 
 ## Sign-in during development
 
-Email login and sign-up call `POST /auth/session` and `POST /auth/signup`, and sign-out calls `DELETE /auth/session`. On a shared environment that is all you need.
+Email login and sign-up call `POST /auth/session` and `POST /auth/signup`, and sign-out calls `DELETE /auth/session`. This is the only sign-in flow, locally and on shared environments.
 
-For local work, the login page can also offer a **demo session**:
-1. Run `python -m scripts.seed --reset` in `api/`.
-2. Paste one of the tokens it prints.
+For seeded demo data (20 users, 40 listings, 15 bookings), run from the repository root:
 
-The token is stored in the httpOnly `passit_session` cookie by `app/api/dev-session`. The API reads that cookie. Browsers scope cookies by host, not port, so `localhost:3000` and `localhost:8000` share it.
+```bash
+docker compose exec api python -m scripts.seed --reset
+```
 
-Demo sessions are enabled outside production builds, or when `PASSIT_DEV_LOGIN=true` (Docker Compose sets this locally). Keep it off for shared environments; staging and demo use real login.
+Sign in with `seed-01@passit.demo` … `seed-20@passit.demo`, password `passit-demo-2026`.
 
 ## Mocks
 

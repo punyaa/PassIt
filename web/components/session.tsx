@@ -37,8 +37,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await logOut().catch(() => undefined);
-    // Also clear the development cookie, which only exists when dev sign-in is enabled.
-    await fetch("/api/dev-session", { method: "DELETE" }).catch(() => undefined);
     setUser(null);
   }, []);
 
