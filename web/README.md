@@ -8,12 +8,15 @@ Next.js App Router frontend shared by two owners:
 Front core owns shared components under `components/`. F2 imports those components rather than duplicating them.
 
 ```bash
+nvm use
 npm ci
 npm run generate:api   # after any API contract change
 npm run dev            # marketing: localhost:3000; application: app.localhost:3000
 ```
 
 Native Next.js commands load the repository-root `.env`. The local template uses `/v1` for browser API requests and `PASSIT_API_ORIGIN=http://localhost:8000` for server-side forwarding. Compose forwards to `http://api:8000` instead.
+
+Node 22 is the tested native runtime (`.nvmrc`). If a build reports a missing Lightning CSS binary after a dependency reinstall or Node switch, run `npm run clean` from `web/` before rebuilding. This clears generated Next.js artifacts; no replacement CSS compiler or manually installed native package is needed.
 
 ## Marketing and application
 

@@ -8,6 +8,7 @@
     "api:lint": "uv run --directory api ruff check .",
     "api:test": "uv run --directory api pytest",
     "web:dev": "npm run dev --prefix web",
+    "web:clean": "npm run clean --prefix web",
     "web:check": "npm run check --prefix web",
     "web:build": "npm run build --prefix web",
     "contract:generate": "uv run --directory api python -m scripts.export_openapi && npm run generate:api --prefix web",

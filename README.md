@@ -50,12 +50,15 @@ docker compose exec api python -m scripts.seed --reset
 For native development:
 
 ```bash
+nvm use
 uv sync --project api --dev
 npm ci --prefix web
 uv run --directory api alembic upgrade head
 npm run api:dev
 npm run web:dev
 ```
+
+Use Node 22 from `.nvmrc`, matching Docker and CI. After switching Node versions or reinstalling dependencies, clear stale Next.js build artifacts with `npm run web:clean` if native-module loading fails. The command only removes `web/.next`; it does not touch dependencies or application data.
 
 Create your private local configuration before starting:
 
