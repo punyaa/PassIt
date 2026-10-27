@@ -11,6 +11,11 @@ COPY . .
 # both route /v1/* to the API.
 ARG NEXT_PUBLIC_API_URL=/v1
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_URL=
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+# Optional same-origin API forwarding for local Compose; AWS routes /v1 at the edge.
+ARG PASSIT_API_ORIGIN=
+ENV PASSIT_API_ORIGIN=$PASSIT_API_ORIGIN
 RUN npm run build
 
 FROM node:22-alpine AS runtime
