@@ -42,7 +42,7 @@ export function LinkButton({
 }
 
 export function Card({ className = "", ...props }: ComponentProps<"div">) {
-  return <div className={`rounded-card border border-line bg-white p-6 ${className}`} {...props} />;
+  return <div className={`rounded-card border border-line bg-white p-5 sm:p-6 ${className}`} {...props} />;
 }
 
 export function PageHeader({
@@ -62,7 +62,7 @@ export function PageHeader({
         {eyebrow && (
           <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-orange-deep">{eyebrow}</p>
         )}
-        <h1 className="mt-2 text-4xl font-extrabold tracking-[-0.045em] lg:text-5xl">{title}</h1>
+        <h1 className="mt-2 text-3xl font-extrabold tracking-[-0.045em] sm:text-4xl">{title}</h1>
         {description && <p className="mt-3 max-w-2xl leading-7 text-muted">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-3">{actions}</div>}

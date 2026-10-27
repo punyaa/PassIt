@@ -16,7 +16,7 @@ function useAfterSignIn() {
   const { refresh } = useSession();
   return async () => {
     await refresh();
-    router.push(next?.startsWith("/") ? next : "/search");
+    router.push(next?.startsWith("/") && !next.startsWith("//") ? next : "/home");
   };
 }
 

@@ -6,8 +6,10 @@ import { SessionProvider } from "@/components/session";
 export default function ApplicationLayout({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
-      <AppHeader />
-      {children}
+      <div className="application-surface">
+        <AppHeader />
+        <div id="app-content" tabIndex={-1}>{children}</div>
+      </div>
     </SessionProvider>
   );
 }

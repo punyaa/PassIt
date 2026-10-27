@@ -36,7 +36,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await logOut().catch(() => undefined);
+    await logOut();
     setUser(null);
   }, []);
 

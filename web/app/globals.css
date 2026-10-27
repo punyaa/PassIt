@@ -66,3 +66,28 @@
     outline-offset: 2px;
   }
 }
+
+/* Application layout is scoped to keep the public marketing surface independent. */
+.application-surface { background: #f8faf8; min-height: 100dvh; padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+.application-surface main { min-width: 0; }
+.application-surface h1, .application-surface h2 { text-wrap: balance; }
+.application-surface input, .application-surface select, .application-surface textarea { min-width: 0; }
+.application-surface input[type="date"] { max-width: 100%; }
+.app-nav-link { display:flex; align-items:center; justify-content:center; gap:8px; padding:12px 16px; border-radius:12px; color:var(--color-muted); font-size:14px; font-weight:700; }
+.app-nav-link[aria-current="page"] { color:var(--forest); background:var(--color-forest-soft); }
+.app-bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:30; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-top:1px solid var(--color-line); background:white; padding:6px 8px calc(6px + env(safe-area-inset-bottom)); }
+.app-bottom-nav .app-nav-link { flex-direction:column; gap:4px; padding:8px 3px; font-size:11px; }
+.skip-link { position:fixed; top:-100px; left:16px; z-index:50; padding:12px; background:white; }
+.skip-link:focus { top:8px; }
+.home-intro { padding:32px 24px; border:1px solid #dce7de; border-radius:24px; background:linear-gradient(120deg,#e7efe3,#f2f5ed); }
+.category-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+.category-shortcut { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; border:1px solid var(--color-line); border-radius:16px; padding:18px 4px; background:white; font-size:12px; font-weight:700; text-align:center; }
+.category-shortcut:hover { border-color:var(--forest); }
+.listing-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+@media(min-width:768px) { .application-surface { padding-bottom:32px; } .app-bottom-nav { display:none; } .category-grid { grid-template-columns:repeat(8,minmax(0,1fr)); } .listing-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px; } .home-intro { padding:44px; } }
+@media(min-width:1280px) { .listing-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } }
+@media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } *, *::before, *::after { animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
+
+.mobile-booking-link { position:fixed; z-index:25; bottom:calc(78px + env(safe-area-inset-bottom)); left:16px; right:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; background:var(--forest); color:white; padding:16px 20px; border-radius:14px; box-shadow:0 5px 20px #173f3026; font-weight:700; }
+.application-surface:has(.mobile-booking-link) { padding-bottom:calc(170px + env(safe-area-inset-bottom)); }
+@media(min-width:768px) { .mobile-booking-link { display:none; } .application-surface:has(.mobile-booking-link) { padding-bottom:32px; } }
