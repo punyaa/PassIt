@@ -8,26 +8,35 @@ const applicationOrigin = "http://app.localhost:3000";
 function request(path, host, options) {
   // Connect to loopback explicitly; OS DNS support for *.localhost varies outside browsers.
   return new Promise((resolve, reject) => {
-    const outgoing = httpRequest(`${origin}${path}`, {
-      method: options.method,
-      headers: { ...options.headers, host },
-    }, (incoming) => {
-      const chunks = [];
-      incoming.on("data", (chunk) => chunks.push(chunk));
-      incoming.on("error", reject);
-      incoming.on("end", () => {
-        const headers = new Headers();
-        for (const [name, values] of Object.entries(incoming.headers)) {
-          for (const value of Array.isArray(values) ? values : [values]) {
-            if (value !== undefined) headers.append(name, value);
+    const outgoing = httpRequest(
+      `${origin}${path}`,
+      {
+        method: options.method,
+        headers: { ...options.headers, host },
+      },
+      (incoming) => {
+        const chunks = [];
+        incoming.on("data", (chunk) => chunks.push(chunk));
+        incoming.on("error", reject);
+        incoming.on("end", () => {
+          const headers = new Headers();
+          for (const [name, values] of Object.entries(incoming.headers)) {
+            for (const value of Array.isArray(values) ? values : [values]) {
+              if (value !== undefined) headers.append(name, value);
+            }
           }
-        }
-        resolve(new Response(incoming.statusCode === 204 ? null : Buffer.concat(chunks), {
-          status: incoming.statusCode,
-          headers,
-        }));
-      });
-    });
+          resolve(
+            new Response(
+              incoming.statusCode === 204 ? null : Buffer.concat(chunks),
+              {
+                status: incoming.statusCode,
+                headers,
+              },
+            ),
+          );
+        });
+      },
+    );
     outgoing.on("error", reject);
     outgoing.end(options.body);
   });
@@ -43,24 +52,42 @@ test("marketing stays public and links to the application", async () => {
   assert.equal((page.match(/<header /g) ?? []).length, 1);
 });
 
-test("application root renders search, not marketing", async () => {
+test("application root renders Home, not marketing", async () => {
   const response = await request("/?q=camera", "app.localhost:3000", {});
   assert.equal(response.status, 200);
   const page = await response.text();
   assert.doesNotMatch(page, /borrow the moment/);
+  assert.match(page, /A little borrowing/);
   assert.equal((page.match(/<header /g) ?? []).length, 1);
 });
 
 test("old application links redirect to the app host with queries intact", async () => {
-  for (const path of ["/search?q=camera&mrt=Bugis", "/login?next=%2Fbookings", "/bookings/123"]) {
+  for (const path of [
+    "/search?q=camera&mrt=Bugis",
+    "/login?next=%2Fbookings",
+    "/bookings/123",
+  ]) {
     const response = await request(path, "localhost:3000", {});
     assert.equal(response.status, 307);
-    assert.equal(response.headers.get("location"), `${applicationOrigin}${path}`);
+    assert.equal(
+      response.headers.get("location"),
+      `${applicationOrigin}${path}`,
+    );
   }
 });
 
 test("application routes remain directly accessible", async () => {
-  for (const path of ["/login", "/signup", "/search", "/bookings", "/listings/new", "/dashboard/lender"]) {
+  for (const path of [
+    "/home",
+    "/profile",
+    "/login",
+    "/signup",
+    "/search",
+    "/bookings",
+    "/listings/new",
+    "/listings/manage",
+    "/dashboard/lender",
+  ]) {
     const response = await request(path, "app.localhost:3000", {});
     assert.equal(response.status, 200, path);
     assert.equal((await response.text()).match(/<header /g)?.length, 1, path);
@@ -75,7 +102,10 @@ test("same-origin API supports login, session, uploads, and logout", async () =>
   const login = await request("/v1/auth/session", host, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ email: "seed-01@passit.demo", password: "passit-demo-2026" }),
+    body: JSON.stringify({
+      email: "seed-01@passit.demo",
+      password: "passit-demo-2026",
+    }),
   });
   assert.equal(login.status, 200);
   const sessionCookie = login.headers.get("set-cookie");
@@ -95,18 +125,28 @@ test("same-origin API supports login, session, uploads, and logout", async () =>
   const upload = await presign.json();
   assert.equal(new URL(upload.upload_url).origin, applicationOrigin);
   const uploadUrl = new URL(upload.upload_url);
-  const image = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=", "base64");
-  const uploaded = await request(`${uploadUrl.pathname}${uploadUrl.search}`, host, {
-    method: "PUT",
-    headers: upload.headers,
-    body: image,
-  });
+  const image = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII=",
+    "base64",
+  );
+  const uploaded = await request(
+    `${uploadUrl.pathname}${uploadUrl.search}`,
+    host,
+    {
+      method: "PUT",
+      headers: upload.headers,
+      body: image,
+    },
+  );
   assert.equal(uploaded.status, 200);
   const downloaded = await request(uploadUrl.pathname, host, {});
   assert.equal(downloaded.status, 200);
   assert.deepEqual(Buffer.from(await downloaded.arrayBuffer()), image);
 
-  const logout = await request("/v1/auth/session", host, { method: "DELETE", headers: { cookie } });
+  const logout = await request("/v1/auth/session", host, {
+    method: "DELETE",
+    headers: { cookie },
+  });
   assert.equal(logout.status, 204);
   assert.match(logout.headers.get("set-cookie"), /Max-Age=0/i);
 });

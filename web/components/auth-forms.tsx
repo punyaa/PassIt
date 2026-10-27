@@ -16,12 +16,15 @@ function useAfterSignIn() {
   const { refresh } = useSession();
   return async () => {
     await refresh();
-    router.push(next?.startsWith("/") && !next.startsWith("//") ? next : "/home");
+    router.push(
+      next?.startsWith("/") && !next.startsWith("//") ? next : "/home",
+    );
   };
 }
 
 function authMessage(error: unknown): string {
-  if (error instanceof ApiError && error.status === 401) return "That email and password don't match.";
+  if (error instanceof ApiError && error.status === 401)
+    return "That email and password don't match.";
   return error instanceof Error ? error.message : "Something went wrong.";
 }
 
@@ -51,7 +54,13 @@ export function LoginForm() {
       <Card>
         <form className="space-y-5" onSubmit={submit}>
           <Field label="Email">
-            <Input autoComplete="email" onChange={(e) => setEmail(e.target.value)} required type="email" value={email} />
+            <Input
+              autoComplete="email"
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              type="email"
+              value={email}
+            />
           </Field>
           <Field label="Password">
             <Input
@@ -80,11 +89,17 @@ export function LoginForm() {
 
 export function SignupForm() {
   const afterSignIn = useAfterSignIn();
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirm: "",
+  });
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
-  const update = (key: keyof typeof form) => (e: { target: { value: string } }) =>
-    setForm((current) => ({ ...current, [key]: e.target.value }));
+  const update =
+    (key: keyof typeof form) => (e: { target: { value: string } }) =>
+      setForm((current) => ({ ...current, [key]: e.target.value }));
   const mismatch = form.confirm.length > 0 && form.password !== form.confirm;
 
   async function submit(event: FormEvent) {
@@ -106,10 +121,22 @@ export function SignupForm() {
     <Card>
       <form className="space-y-5" onSubmit={submit}>
         <Field label="Display name" hint="Shown to people you rent with.">
-          <Input autoComplete="name" maxLength={60} onChange={update("name")} required value={form.name} />
+          <Input
+            autoComplete="name"
+            maxLength={60}
+            onChange={update("name")}
+            required
+            value={form.name}
+          />
         </Field>
         <Field label="Email">
-          <Input autoComplete="email" onChange={update("email")} required type="email" value={form.email} />
+          <Input
+            autoComplete="email"
+            onChange={update("email")}
+            required
+            type="email"
+            value={form.email}
+          />
         </Field>
         <Field label="Password" hint="At least 8 characters.">
           <Input
@@ -121,7 +148,10 @@ export function SignupForm() {
             value={form.password}
           />
         </Field>
-        <Field label="Confirm password" error={mismatch ? "Passwords don't match." : undefined}>
+        <Field
+          label="Confirm password"
+          error={mismatch ? "Passwords don't match." : undefined}
+        >
           <Input
             autoComplete="new-password"
             onChange={update("confirm")}
@@ -131,7 +161,12 @@ export function SignupForm() {
           />
         </Field>
         {error && <Alert>{error}</Alert>}
-        <Button busy={busy} className="w-full" disabled={mismatch} type="submit">
+        <Button
+          busy={busy}
+          className="w-full"
+          disabled={mismatch}
+          type="submit"
+        >
           Create account
         </Button>
         <p className="text-center text-sm text-muted">

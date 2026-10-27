@@ -5,6 +5,15 @@ import { dateRange, money } from "@/lib/format";
 
 import { BookingStateBadge } from "./booking-state";
 
+const ACTION_LABELS: Record<string, string> = {
+  handover: "Start handover",
+  return: "Record return",
+  settle: "Settle deposit",
+  report_damage: "Review damage",
+  review: "Leave a review",
+  cancel: "View booking",
+};
+
 export function BookingRow({ booking }: { booking: Schemas["Booking"] }) {
   return (
     <Link
@@ -12,18 +21,27 @@ export function BookingRow({ booking }: { booking: Schemas["Booking"] }) {
       href={`/bookings/${booking.id}`}
     >
       <div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <strong className="text-lg">{booking.listing_title}</strong>
           <BookingStateBadge state={booking.state} />
         </div>
         <p className="mt-1 text-sm text-muted">
-          {dateRange(booking.start_date, booking.end_date)} · {booking.viewer_role === "borrower" ? "You're renting" : "You're lending"}
+          {dateRange(booking.start_date, booking.end_date)} ·{" "}
+          {booking.viewer_role === "borrower"
+            ? "You're renting"
+            : "You're lending"}
         </p>
       </div>
       <div className="text-right">
         <p className="font-extrabold">{money(booking.fee)}</p>
         {booking.available_actions.length > 0 && (
-          <p className="text-xs font-bold text-orange-deep">Action needed →</p>
+          <p className="text-xs font-bold text-orange-deep">
+            {ACTION_LABELS[
+              booking.available_actions.find((action) => action !== "cancel") ??
+                "cancel"
+            ] ?? "View next step"}{" "}
+            →
+          </p>
         )}
       </div>
     </Link>
@@ -40,7 +58,14 @@ export function settlement(entries: Schemas["LedgerEntry"][]) {
     feeReleased: sum("lender", "release_fee"),
     damagePaid: sum("lender", "damage_payout"),
     depositRefunded: sum("borrower", "refund_deposit"),
-    heldNow: sum("platform_hold", "hold_fee", "hold_deposit", "release_fee", "refund_deposit", "damage_payout"),
+    heldNow: sum(
+      "platform_hold",
+      "hold_fee",
+      "hold_deposit",
+      "release_fee",
+      "refund_deposit",
+      "damage_payout",
+    ),
   };
 }
 
@@ -52,20 +77,36 @@ const ENTRY_LABELS: Record<Schemas["LedgerEntry"]["entry_type"], string> = {
   damage_payout: "Damage payout",
 };
 
-export function LedgerTable({ entries, role }: { entries: Schemas["LedgerEntry"][]; role: "borrower" | "lender" }) {
+export function LedgerTable({
+  entries,
+  role,
+}: {
+  entries: Schemas["LedgerEntry"][];
+  role: "borrower" | "lender";
+}) {
   const mine = entries.filter((e) => e.account === role);
-  if (!mine.length) return <p className="text-sm text-muted">No money has moved for you yet.</p>;
+  if (!mine.length)
+    return (
+      <p className="text-sm text-muted">No money has moved for you yet.</p>
+    );
   return (
     <table className="w-full text-sm">
       <tbody>
         {mine.map((entry, index) => {
           const amount = Number(entry.amount);
           const label =
-            entry.entry_type.startsWith("hold") && amount > 0 ? `${ENTRY_LABELS[entry.entry_type]} returned` : ENTRY_LABELS[entry.entry_type];
+            entry.entry_type.startsWith("hold") && amount > 0
+              ? `${ENTRY_LABELS[entry.entry_type]} returned`
+              : ENTRY_LABELS[entry.entry_type];
           return (
-            <tr className="border-b border-line last:border-0" key={`${entry.entry_type}-${index}`}>
+            <tr
+              className="border-b border-line last:border-0"
+              key={`${entry.entry_type}-${index}`}
+            >
               <td className="py-2">{label}</td>
-              <td className={`py-2 text-right font-bold ${amount < 0 ? "text-danger" : "text-success"}`}>
+              <td
+                className={`py-2 text-right font-bold ${amount < 0 ? "text-danger" : "text-success"}`}
+              >
                 {amount < 0 ? "−" : "+"}
                 {money(Math.abs(amount))}
               </td>

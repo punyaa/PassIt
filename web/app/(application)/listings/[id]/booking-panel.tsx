@@ -262,7 +262,7 @@ export function BookingPanel({
         ) : (
           <Link
             className="block rounded-xl bg-orange px-5 py-3 text-center text-sm font-extrabold"
-            href={`/login?next=${encodeURIComponent(withQuery(pathname, { from: start, to: end }))}`}
+            href={`/login?next=${encodeURIComponent(withQuery(pathname, { from: start, to: end, back: params.get("back") }))}`}
           >
             Log in to book
           </Link>

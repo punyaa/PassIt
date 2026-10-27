@@ -32,8 +32,14 @@ export function PhotoPicker({
 
   function add(list: FileList | null) {
     const picked = Array.from(list ?? []);
-    const rejected = picked.filter((file) => !ACCEPTED_TYPES.includes(file.type as never) || file.size > MAX_UPLOAD_BYTES);
-    setError(rejected.length ? "Use JPEG or PNG photos under 10 MB." : undefined);
+    const rejected = picked.filter(
+      (file) =>
+        !ACCEPTED_TYPES.includes(file.type as never) ||
+        file.size > MAX_UPLOAD_BYTES,
+    );
+    setError(
+      rejected.length ? "Use JPEG or PNG photos under 10 MB." : undefined,
+    );
     const accepted = picked.filter((file) => !rejected.includes(file));
     onChange([...files, ...accepted].slice(0, max));
   }
@@ -42,8 +48,15 @@ export function PhotoPicker({
     <div>
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
         {previews.map((url, index) => (
-          <div className="relative aspect-square overflow-hidden rounded-xl border border-line" key={url}>
-            <img alt={`Photo ${index + 1}`} className="size-full object-cover" src={url} />
+          <div
+            className="relative aspect-square overflow-hidden rounded-xl border border-line"
+            key={url}
+          >
+            <img
+              alt={`Photo ${index + 1}`}
+              className="size-full object-cover"
+              src={url}
+            />
             <button
               aria-label={`Remove photo ${index + 1}`}
               className="absolute right-1 top-1 grid size-7 place-items-center rounded-full bg-white/90 text-sm font-bold shadow"
@@ -55,7 +68,7 @@ export function PhotoPicker({
           </div>
         ))}
         {files.length < max && (
-          <label className="grid aspect-square cursor-pointer place-items-center rounded-xl border-2 border-dashed border-[#b9cdbf] bg-sand text-center text-xs font-bold text-muted hover:border-forest">
+          <label className="grid aspect-square cursor-pointer place-items-center rounded-xl border-2 border-dashed border-[#b9cdbf] bg-sand text-center text-xs font-bold text-muted hover:border-forest has-focus-visible:outline-2 has-focus-visible:outline-forest">
             <span>
               <span className="block text-2xl">📷</span>
               {label}
