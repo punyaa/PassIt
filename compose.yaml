@@ -50,7 +50,7 @@ services:
       PASSIT_PAYMENT_MODE: ${PASSIT_PAYMENT_MODE:-mock}
       PASSIT_STORAGE_BACKEND: ${PASSIT_STORAGE_BACKEND:-local}
       PASSIT_SCHEDULER_BACKEND: ${PASSIT_SCHEDULER_BACKEND:-local}
-      PASSIT_PUBLIC_API_URL: ${PASSIT_PUBLIC_API_URL:-http://localhost:8000}
+      PASSIT_PUBLIC_API_URL: ${PASSIT_PUBLIC_API_URL:-http://app.localhost:3000}
       PASSIT_LOCAL_MEDIA_DIR: /app/.media
       PASSIT_RELEASE_LAMBDA_ARN: ${PASSIT_RELEASE_LAMBDA_ARN:-}
       PASSIT_SCHEDULER_ROLE_ARN: ${PASSIT_SCHEDULER_ROLE_ARN:-}
@@ -75,11 +75,12 @@ services:
       context: ./web
       args:
         # Baked into the client bundle at build time; runtime environment is too late.
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/v1}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/v1}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://app.localhost:3000}
+        PASSIT_API_ORIGIN: http://api:8000
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/v1}
-      # Local only: lets the login page accept seed tokens. Never enable in shared environments.
-      PASSIT_DEV_LOGIN: ${PASSIT_DEV_LOGIN:-true}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/v1}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://app.localhost:3000}
     ports:
       - "3000:3000"
     depends_on:

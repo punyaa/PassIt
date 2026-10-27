@@ -29,12 +29,17 @@ The supported local environment is Docker Compose:
 docker compose up --build
 ```
 
-- Web application: <http://localhost:3000>
+- Marketing site: <http://localhost:3000>
+- Rental application: <http://app.localhost:3000>
 - API documentation: <http://localhost:8000/docs>
 - API health: <http://localhost:8000/health>
 - PostgreSQL: `localhost:5432`
 
 Compose waits for PostgreSQL, applies pending Alembic migrations, and then starts the API and web application.
+
+Both frontend hostnames use the same Next.js service. Application API requests use `/v1` on the app hostname, forwarded to FastAPI by Next.js. Existing application links on `localhost:3000` redirect to the app hostname. Chrome resolves `app.localhost` to loopback without editing the hosts file.
+
+If you already have a local `.env`, set `NEXT_PUBLIC_API_URL=/v1`, `NEXT_PUBLIC_APP_URL=http://app.localhost:3000`, and `PASSIT_PUBLIC_API_URL=http://app.localhost:3000`, then rebuild the web image. For native development, also set `PASSIT_API_ORIGIN=http://localhost:8000`; Compose supplies its own internal forwarding target.
 
 Load demo data (20 users, 40 listings, 15 bookings across every state). Sign in as `seed-01@passit.demo` to `seed-20@passit.demo` with password `passit-demo-2026`; the command also prints session tokens for scripts:
 
@@ -45,12 +50,15 @@ docker compose exec api python -m scripts.seed --reset
 For native development:
 
 ```bash
+nvm use
 uv sync --project api --dev
 npm ci --prefix web
 uv run --directory api alembic upgrade head
 npm run api:dev
 npm run web:dev
 ```
+
+Use Node 22 from `.nvmrc`, matching Docker and CI. After switching Node versions or reinstalling dependencies, clear stale Next.js build artifacts with `npm run web:clean` if native-module loading fails. The command only removes `web/.next`; it does not touch dependencies or application data.
 
 Create your private local configuration before starting:
 

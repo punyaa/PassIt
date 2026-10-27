@@ -5,10 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
 import { ApiError } from "@/lib/api-client";
-import { devSignIn, logIn, signUp } from "@/lib/auth";
+import { logIn, signUp } from "@/lib/auth";
 
 import { useSession } from "./session";
-import { Alert, Button, Card, Field, Input, Textarea } from "./ui";
+import { Alert, Button, Card, Field, Input } from "./ui";
 
 function useAfterSignIn() {
   const router = useRouter();
@@ -21,14 +21,11 @@ function useAfterSignIn() {
 }
 
 function authMessage(error: unknown): string {
-  if (error instanceof ApiError && (error.status === 501 || error.status === 404)) {
-    return "Email accounts aren't live yet. Use a demo session below for now.";
-  }
   if (error instanceof ApiError && error.status === 401) return "That email and password don't match.";
   return error instanceof Error ? error.message : "Something went wrong.";
 }
 
-export function LoginForm({ devLogin }: { devLogin: boolean }) {
+export function LoginForm() {
   const afterSignIn = useAfterSignIn();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -77,54 +74,7 @@ export function LoginForm({ devLogin }: { devLogin: boolean }) {
           </p>
         </form>
       </Card>
-      {devLogin && <DevSessionForm onSignedIn={afterSignIn} />}
     </div>
-  );
-}
-
-function DevSessionForm({ onSignedIn }: { onSignedIn: () => Promise<void> }) {
-  const [token, setToken] = useState("");
-  const [error, setError] = useState<string>();
-  const [busy, setBusy] = useState(false);
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    setBusy(true);
-    setError(undefined);
-    try {
-      await devSignIn(token);
-      await onSignedIn();
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not sign in.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <Card className="border-dashed bg-sand">
-      <form className="space-y-4" onSubmit={submit}>
-        <div>
-          <strong>Demo session</strong>
-          <p className="mt-1 text-sm leading-6 text-muted">
-            Development only. Paste a token printed by{" "}
-            <code className="rounded bg-white px-1">python -m scripts.seed</code>.
-          </p>
-        </div>
-        <Textarea
-          aria-label="Session token"
-          className="min-h-20 font-mono text-xs"
-          onChange={(e) => setToken(e.target.value)}
-          placeholder="Bearer eyJhbGciOi…"
-          required
-          value={token}
-        />
-        {error && <Alert>{error}</Alert>}
-        <Button busy={busy} type="submit" variant="secondary">
-          Use demo session
-        </Button>
-      </form>
-    </Card>
   );
 }
 
@@ -146,7 +96,7 @@ export function SignupForm() {
       await signUp(form.name.trim(), form.email, form.password);
       await afterSignIn();
     } catch (caught) {
-      setError(authMessage(caught).replace(" below", " on the log-in page"));
+      setError(authMessage(caught));
     } finally {
       setBusy(false);
     }

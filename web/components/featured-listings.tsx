@@ -1,6 +1,7 @@
 "use client";
 
 import type { Schemas } from "@/lib/api-client";
+import { applicationUrl } from "@/lib/application-url";
 import { useApi } from "@/lib/use-api";
 
 import { ListingCard } from "./listing-card";
@@ -21,15 +22,15 @@ export function FeaturedListings() {
     return (
       <EmptyState title={listings.error ? "Listings are unavailable right now" : "Be the first to list something"}>
         <div className="mt-4">
-          <LinkButton href="/listings/new">List an item</LinkButton>
+          <LinkButton href={applicationUrl("/listings/new")}>List an item</LinkButton>
         </div>
       </EmptyState>
     );
   }
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {listings.data.map((listing) => (
-        <ListingCard key={listing.id} listing={listing} />
+        {listings.data.map((listing) => (
+          <ListingCard key={listing.id} listing={listing} href={applicationUrl(`/listings/${listing.id}`)} />
       ))}
     </div>
   );

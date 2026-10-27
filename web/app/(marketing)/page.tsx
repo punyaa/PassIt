@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-import { AppHeader } from "@/components/app-header";
 import { FeaturedListings } from "@/components/featured-listings";
+import { applicationUrl } from "@/lib/application-url";
 import { CATEGORIES } from "@/lib/catalogue";
 
 const POPULAR_STATIONS = ["Bishan", "Bugis", "Clementi", "Jurong East", "Tampines", "Woodlands"];
@@ -9,10 +9,6 @@ const POPULAR_STATIONS = ["Bishan", "Bugis", "Clementi", "Jurong East", "Tampine
 export default function Home() {
   return (
     <>
-      <div className="bg-[#173f30] px-4 py-2 text-center text-xs font-bold text-[#f7e6bd]">
-        The things you need, from people nearby. <span className="text-[#b8d4c0]">Singapore prototype</span>
-      </div>
-      <AppHeader />
       <main>
         <section className="mx-auto mt-7 grid max-w-7xl overflow-hidden rounded-3xl bg-[#194b37] text-white lg:grid-cols-[1.1fr_.9fr]">
           <div className="px-7 py-14 lg:px-14 lg:py-20">
@@ -24,10 +20,10 @@ export default function Home() {
               Rent useful things from people around you. Spend less, store less, and give good items another adventure.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link className="rounded-xl bg-[#f2a65f] px-5 py-4 font-extrabold text-[#17352b]" href="/search">
+              <Link className="rounded-xl bg-[#f2a65f] px-5 py-4 font-extrabold text-[#17352b]" href={applicationUrl("/search")}>
                 Explore items ↗
               </Link>
-              <Link className="rounded-xl border border-[#9bbdaf] px-5 py-4 font-extrabold" href="/listings/new">
+              <Link className="rounded-xl border border-[#9bbdaf] px-5 py-4 font-extrabold" href={applicationUrl("/listings/new")}>
                 Earn from your items
               </Link>
             </div>
@@ -42,7 +38,7 @@ export default function Home() {
         </section>
 
         <section className="mx-auto -mt-7 max-w-6xl px-5">
-          <form action="/search" className="grid gap-3 rounded-2xl border border-[#eae9df] bg-white p-3 shadow-2xl md:grid-cols-[1fr_.7fr_auto]">
+          <form action={applicationUrl("/search")} className="grid gap-3 rounded-2xl border border-[#eae9df] bg-white p-3 shadow-2xl md:grid-cols-[1fr_.7fr_auto]">
             <label className="px-4 py-3 text-xs font-extrabold tracking-wider text-[#6e8a7b]">
               WHAT ARE YOU LOOKING FOR?
               <input className="mt-2 block w-full text-base font-semibold text-[#17352b] outline-none" name="q" placeholder="Try camera, tent, drill…" />
@@ -69,7 +65,7 @@ export default function Home() {
             {CATEGORIES.slice(0, 6).map(({ icon, name }) => (
               <Link
                 className="flex min-h-32 flex-col justify-between rounded-2xl border border-[#e8ece3] bg-[#f7f6ef] p-4"
-                href={`/search?category=${encodeURIComponent(name)}`}
+                href={applicationUrl(`/search?category=${encodeURIComponent(name)}`)}
                 key={name}
               >
                 <span className="text-3xl">{icon}</span>

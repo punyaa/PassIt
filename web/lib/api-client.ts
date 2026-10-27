@@ -2,7 +2,7 @@ import type { components } from "./api-types";
 
 export type Schemas = components["schemas"];
 
-export const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/v1";
+export const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "/v1";
 
 export class ApiError extends Error {
   constructor(
