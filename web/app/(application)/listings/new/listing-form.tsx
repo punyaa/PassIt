@@ -5,7 +5,16 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
 import { PhotoPicker } from "@/components/photo-picker";
-import { Alert, Button, Card, Field, Input, PageHeader, Select, Textarea } from "@/components/ui";
+import {
+  Alert,
+  Button,
+  Card,
+  Field,
+  Input,
+  PageHeader,
+  Select,
+  Textarea,
+} from "@/components/ui";
 import { ApiError, apiPost, type Schemas } from "@/lib/api-client";
 import { CATEGORIES, CONDITIONS } from "@/lib/catalogue";
 import { addDays, isoDate, money } from "@/lib/format";
@@ -48,15 +57,24 @@ function validate(form: Form): Partial<Record<keyof Form, string>> {
   const day = Number(form.price_day);
   if (form.title.trim().length < 3) errors.title = "At least 3 characters.";
   if (!form.category) errors.category = "Choose a category.";
-  if (form.postal_code && !/^\d{6}$/.test(form.postal_code)) errors.postal_code = "Six digits.";
-  if (!form.postal_code && !form.mrt_station) errors.mrt_station = "Add a postal code or choose a station.";
+  if (form.postal_code && !/^\d{6}$/.test(form.postal_code))
+    errors.postal_code = "Six digits.";
+  if (!form.postal_code && !form.mrt_station)
+    errors.mrt_station = "Add a postal code or choose a station.";
   if (!(day > 0)) errors.price_day = "Enter a daily price.";
-  if (form.price_week && Number(form.price_week) >= day * 7) errors.price_week = "Should be below 7 × daily.";
-  if (form.price_month && form.price_week && Number(form.price_month) >= Number(form.price_week) * 4) {
+  if (form.price_week && Number(form.price_week) >= day * 7)
+    errors.price_week = "Should be below 7 × daily.";
+  if (
+    form.price_month &&
+    form.price_week &&
+    Number(form.price_month) >= Number(form.price_week) * 4
+  ) {
     errors.price_month = "Should be below 4 × weekly.";
   }
-  if (form.deposit === "" || Number(form.deposit) < 0) errors.deposit = "Enter a deposit (0 is fine).";
-  if (form.available_to < form.available_from) errors.available_to = "Ends before it starts.";
+  if (form.deposit === "" || Number(form.deposit) < 0)
+    errors.deposit = "Enter a deposit (0 is fine).";
+  if (form.available_to < form.available_from)
+    errors.available_to = "Ends before it starts.";
   return errors;
 }
 
@@ -77,11 +95,14 @@ export function ListingForm() {
   async function suggest() {
     setSuggesting(true);
     try {
-      const result = await apiPost<Schemas["PriceSuggestion"]>("/listings/price-suggestion", {
-        title: form.title,
-        category: form.category,
-        condition: form.condition,
-      });
+      const result = await apiPost<Schemas["PriceSuggestion"]>(
+        "/listings/price-suggestion",
+        {
+          title: form.title,
+          category: form.category,
+          condition: form.condition,
+        },
+      );
       setSuggestion(result);
       setForm((current) => ({
         ...current,
@@ -90,7 +111,10 @@ export function ListingForm() {
         price_month: result.month.recommended,
       }));
     } catch (caught) {
-      setError({ message: caught instanceof Error ? caught.message : "No suggestion right now." });
+      setError({
+        message:
+          caught instanceof Error ? caught.message : "No suggestion right now.",
+      });
     } finally {
       setSuggesting(false);
     }
@@ -120,13 +144,19 @@ export function ListingForm() {
         postal_code: form.postal_code || null,
         mrt_station: form.mrt_station || null,
         photo_keys: photoKeys,
-        availability: [{ start_date: form.available_from, end_date: form.available_to }],
+        availability: [
+          { start_date: form.available_from, end_date: form.available_to },
+        ],
       });
       router.push(`/listings/${listing.id}`);
     } catch (caught) {
       setProgress(undefined);
       const limit = caught instanceof ApiError && caught.status === 403;
-      setError({ message: caught instanceof Error ? caught.message : "Could not publish.", limit });
+      setError({
+        message:
+          caught instanceof Error ? caught.message : "Could not publish.",
+        limit,
+      });
     }
   }
 
@@ -143,7 +173,12 @@ export function ListingForm() {
         <Card className="space-y-5">
           <h2 className="text-xl font-extrabold">What are you lending?</h2>
           <Field label="Title" error={errors.title}>
-            <Input maxLength={120} onChange={set("title")} placeholder="e.g. 4-person camping tent" value={form.title} />
+            <Input
+              maxLength={120}
+              onChange={set("title")}
+              placeholder="e.g. 4-person camping tent"
+              value={form.title}
+            />
           </Field>
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Category" error={errors.category}>
@@ -164,10 +199,20 @@ export function ListingForm() {
               </Select>
             </Field>
           </div>
-          <Field label="Description" hint="What's included, any quirks, pickup notes.">
-            <Textarea maxLength={2000} onChange={set("description")} value={form.description} />
+          <Field
+            label="Description"
+            hint="What's included, any quirks, pickup notes."
+          >
+            <Textarea
+              maxLength={2000}
+              onChange={set("description")}
+              value={form.description}
+            />
           </Field>
-          <Field label="Photos" hint="Clear photos get more bookings. They also back up the item's condition.">
+          <Field
+            label="Photos"
+            hint="Clear photos get more bookings. They also back up the item's condition."
+          >
             <PhotoPicker files={photos} onChange={setPhotos} />
           </Field>
         </Card>
@@ -175,8 +220,18 @@ export function ListingForm() {
         <Card className="space-y-5">
           <h2 className="text-xl font-extrabold">Where is it?</h2>
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Postal code" hint="Used once to find your nearest MRT. Never stored." error={errors.postal_code}>
-              <Input inputMode="numeric" maxLength={6} onChange={set("postal_code")} placeholder="119077" value={form.postal_code} />
+            <Field
+              label="Postal code"
+              hint="Used once to find your nearest MRT. Never stored."
+              error={errors.postal_code}
+            >
+              <Input
+                inputMode="numeric"
+                maxLength={6}
+                onChange={set("postal_code")}
+                placeholder="119077"
+                value={form.postal_code}
+              />
             </Field>
             <Field label="…or nearest MRT" error={errors.mrt_station}>
               <Select onChange={set("mrt_station")} value={form.mrt_station}>
@@ -194,31 +249,77 @@ export function ListingForm() {
         <Card className="space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-extrabold">Pricing</h2>
-            <Button busy={suggesting} disabled={!canSuggest} onClick={suggest} type="button" variant="secondary">
+            <Button
+              busy={suggesting}
+              disabled={!canSuggest}
+              onClick={suggest}
+              type="button"
+              variant="secondary"
+            >
               ✨ Suggest prices
             </Button>
           </div>
-          {!canSuggest && <p className="-mt-2 text-xs text-muted">Add a title and category to get a suggestion.</p>}
+          {!canSuggest && (
+            <p className="-mt-2 text-xs text-muted">
+              Add a title and category to get a suggestion.
+            </p>
+          )}
           {suggestion && (
             <Alert tone="info">
-              Suggested from {suggestion.source === "heuristic" ? "similar listings" : "our pricing model"}: day{" "}
-              {money(suggestion.day.min)}–{money(suggestion.day.max)}, week {money(suggestion.week.min)}–
-              {money(suggestion.week.max)}. Adjust as you like.
+              Suggested from{" "}
+              {suggestion.source === "heuristic"
+                ? "similar listings"
+                : "our pricing model"}
+              : day {money(suggestion.day.min)}–{money(suggestion.day.max)},
+              week {money(suggestion.week.min)}–{money(suggestion.week.max)}.
+              Adjust as you like.
             </Alert>
           )}
           <div className="grid gap-5 sm:grid-cols-3">
             <Field label="Per day (S$)" error={errors.price_day}>
-              <Input inputMode="decimal" min={0} onChange={set("price_day")} step="0.5" type="number" value={form.price_day} />
+              <Input
+                inputMode="decimal"
+                min={0}
+                onChange={set("price_day")}
+                step="0.5"
+                type="number"
+                value={form.price_day}
+              />
             </Field>
             <Field label="Per week (optional)" error={errors.price_week}>
-              <Input inputMode="decimal" min={0} onChange={set("price_week")} step="0.5" type="number" value={form.price_week} />
+              <Input
+                inputMode="decimal"
+                min={0}
+                onChange={set("price_week")}
+                step="0.5"
+                type="number"
+                value={form.price_week}
+              />
             </Field>
             <Field label="Per month (optional)" error={errors.price_month}>
-              <Input inputMode="decimal" min={0} onChange={set("price_month")} step="0.5" type="number" value={form.price_month} />
+              <Input
+                inputMode="decimal"
+                min={0}
+                onChange={set("price_month")}
+                step="0.5"
+                type="number"
+                value={form.price_month}
+              />
             </Field>
           </div>
-          <Field label="Refundable deposit (S$)" hint="Covers damage. Returned in full when the item comes back fine." error={errors.deposit}>
-            <Input inputMode="decimal" min={0} onChange={set("deposit")} step="1" type="number" value={form.deposit} />
+          <Field
+            label="Refundable deposit (S$)"
+            hint="Covers damage. Returned in full when the item comes back fine."
+            error={errors.deposit}
+          >
+            <Input
+              inputMode="decimal"
+              min={0}
+              onChange={set("deposit")}
+              step="1"
+              type="number"
+              value={form.deposit}
+            />
           </Field>
         </Card>
 
@@ -226,25 +327,39 @@ export function ListingForm() {
           <h2 className="text-xl font-extrabold">When can people borrow it?</h2>
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Available from">
-              <Input min={today} onChange={set("available_from")} type="date" value={form.available_from} />
+              <Input
+                min={today}
+                onChange={set("available_from")}
+                type="date"
+                value={form.available_from}
+              />
             </Field>
             <Field label="Available until" error={errors.available_to}>
-              <Input min={form.available_from} onChange={set("available_to")} type="date" value={form.available_to} />
+              <Input
+                min={form.available_from}
+                onChange={set("available_to")}
+                type="date"
+                value={form.available_to}
+              />
             </Field>
           </div>
         </Card>
 
         {error && (
-          <Alert title={error.limit ? "Listing limit reached" : "Couldn't publish"}>
+          <Alert
+            title={error.limit ? "Listing limit reached" : "Couldn't publish"}
+          >
             {error.message}{" "}
             {error.limit && (
-              <Link className="font-bold underline" href="/dashboard/lender">
+              <Link className="font-bold underline" href="/listings/manage">
                 Manage your listings
               </Link>
             )}
           </Alert>
         )}
-        {touched && Object.keys(errors).length > 0 && <Alert>Fix the highlighted fields to continue.</Alert>}
+        {touched && Object.keys(errors).length > 0 && (
+          <Alert>Fix the highlighted fields to continue.</Alert>
+        )}
         <div className="flex items-center justify-end gap-4">
           {progress && <span className="text-sm text-muted">{progress}</span>}
           <Button busy={Boolean(progress)} type="submit" variant="accent">

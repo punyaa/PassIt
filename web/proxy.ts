@@ -10,7 +10,7 @@ export function proxy(request: NextRequest): NextResponse {
   if (isApplication) {
     if (request.nextUrl.pathname === "/") {
       const destination = request.nextUrl.clone();
-      destination.pathname = "/search";
+      destination.pathname = "/home";
       return NextResponse.rewrite(destination);
     }
     return NextResponse.next();

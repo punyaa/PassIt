@@ -22,20 +22,25 @@ Node 22 is the tested native runtime (`.nvmrc`). If a build reports a missing Li
 
 One Next.js service serves both surfaces. `app/(marketing)` owns the landing page and public navigation. `app/(application)` owns rental screens, application navigation, and session state. Shared visual components stay in `components/`.
 
-`NEXT_PUBLIC_APP_URL` sets the application origin. Locally it is `http://app.localhost:3000`; `web/proxy.ts` serves search at its root and redirects application paths from the marketing host while preserving queries. Marketing links and its search form point directly at the application. App links remain relative, so the logo and logout stay in the application.
+`NEXT_PUBLIC_APP_URL` sets the application origin. Locally it is `http://app.localhost:3000`; `web/proxy.ts` serves Home at its root and redirects application paths from the marketing host while preserving queries. Marketing links and its search form point directly at the application. App links remain relative, so the logo and logout stay in the application.
 
 Existing deployments remain single-host when `NEXT_PUBLIC_APP_URL` is unset. A production split requires the app hostname's DNS, HTTPS certificate, and edge routing before setting this build-time value. AWS continues to route `/v1` at the edge; `PASSIT_API_ORIGIN` is only needed when Next.js forwards API requests itself.
 
 ## Screens
 
 - Marketing `/`: landing page with search, categories, and live listings.
-- App `/` and `/search`: rental search, filters, availability dates, and paging.
+- App `/` and `/home`: searchable Home, categories, rental attention links and browsable listings.
+- `/search`: filters, date-aware availability and URL-backed pagination that survives listing navigation.
+- `/profile`: read-only identity, private email, personal listings, received reviews, dashboard links and logout.
 - `/login`, `/signup`: email authentication, including seeded accounts.
 - `/listings/new`, `/listings/[id]`: listing creation, photos, pricing, availability, and booking.
-- `/bookings`, `/bookings/[id]`: renting/lending lists, booking actions, fee-release countdown, and ledger.
+- `/listings/manage`, `/listings/[id]/edit`: supported listing details, pricing, visibility and availability-window editing.
+- `/bookings`, `/bookings/[id]`: Renting/Lending with Active/History views, booking actions, fee-release countdown and ledger.
 - `/dashboard/borrower`, `/dashboard/lender`: savings, earnings, deposits, listings, and pending actions.
 - `/handover/[id]`, `/returns/[id]`, `/damage/[id]`: condition evidence, mutual confirmation, and damage settlement.
 - `/reviews/new?booking=`: rating and comment, once per booking.
+
+Mobile bottom navigation and desktop navigation share Home, Search, Rentals and Profile. Cancellation, deposit refunds and damage assessments use inline review steps with explicit confirm/keep-reviewing buttons. Account editing is a separate follow-up requiring backend support.
 
 The booking page mirrors the API's state machine. It renders whatever `available_actions` the API returns for the viewer, instead of re-deriving permissions in the browser.
 

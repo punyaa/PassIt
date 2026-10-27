@@ -4,7 +4,14 @@ import { NeedsAction } from "@/components/dashboard-bookings";
 import { ListingCard } from "@/components/listing-card";
 import { PageShell } from "@/components/page-shell";
 import { RequireAuth } from "@/components/session";
-import { Alert, EmptyState, LinkButton, PageHeader, Spinner, Stat } from "@/components/ui";
+import {
+  Alert,
+  EmptyState,
+  LinkButton,
+  PageHeader,
+  Spinner,
+  Stat,
+} from "@/components/ui";
 import type { Schemas } from "@/lib/api-client";
 import { money } from "@/lib/format";
 import { useApi } from "@/lib/use-api";
@@ -15,7 +22,8 @@ function LenderDashboard() {
   const dashboard = useApi<Schemas["Dashboard"]>("/dashboard?role=lender");
   const listings = useApi<Schemas["Listing"][]>("/listings/mine");
   const d = dashboard.data;
-  const used = listings.data?.filter((l) => l.status !== "archived").length ?? 0;
+  const used =
+    listings.data?.filter((l) => l.status !== "archived").length ?? 0;
 
   return (
     <>
@@ -23,22 +31,34 @@ function LenderDashboard() {
         eyebrow="Lender dashboard"
         title="Your earnings"
         actions={
-          used < FREE_LISTINGS ? <LinkButton href="/listings/new" variant="accent">+ List an item</LinkButton> : undefined
+          used < FREE_LISTINGS ? (
+            <LinkButton href="/listings/new" variant="accent">
+              + List an item
+            </LinkButton>
+          ) : undefined
         }
       />
       {dashboard.loading && <Spinner />}
       {dashboard.error && <Alert>{dashboard.error.message}</Alert>}
       {d && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat label="Earned" value={money(d.earnings)} hint="Released fees plus damage payouts" />
-          <Stat label="Pending release" value={money(d.pending_release)} hint="Held until the hold period ends" />
+          <Stat
+            label="Earned"
+            value={money(d.earnings)}
+            hint="Released fees plus damage payouts"
+          />
+          <Stat
+            label="Pending release"
+            value={money(d.pending_release)}
+            hint="Held until the hold period ends"
+          />
           <Stat label="Active rentals" value={d.active_rentals} />
           <Stat label="Completed rentals" value={d.completed_rentals} />
         </div>
       )}
 
       <div className="mt-10">
-        <NeedsAction role="lender" />
+        <NeedsAction role="lender" compact={false} />
       </div>
 
       <section className="mt-10">

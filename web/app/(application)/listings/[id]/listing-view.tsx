@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { ListingPhoto } from "@/components/listing-card";
 import { useSession } from "@/components/session";
@@ -15,11 +16,20 @@ import { BookingPanel } from "./booking-panel";
 export function ListingView({ id }: { id: string }) {
   const listing = useApi<Schemas["ListingDetail"]>(`/listings/${id}`);
   const { user } = useSession();
+  const back = useSearchParams().get("back");
+  const searchHref =
+    back === "/search" || back?.startsWith("/search?") ? back : "/search";
 
   if (listing.loading) return <Spinner label="Loading listing…" />;
   if (listing.error || !listing.data) {
     return (
-      <Alert title={listing.error?.status === 404 ? "This listing isn't available" : "Couldn't load this listing"}>
+      <Alert
+        title={
+          listing.error?.status === 404
+            ? "This listing isn't available"
+            : "Couldn't load this listing"
+        }
+      >
         {listing.error?.status === 404 ? (
           <Link className="underline" href="/search">
             Browse other rentals
@@ -37,20 +47,33 @@ export function ListingView({ id }: { id: string }) {
   return (
     <div className="grid gap-10 lg:grid-cols-[1fr_380px]">
       <div>
-        <Link className="text-sm font-bold text-muted" href="/search">
+        <Link className="text-sm font-bold text-muted" href={searchHref}>
           ← Back to search
         </Link>
         <Gallery listing={item} />
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Badge>{item.category}</Badge>
           <Badge tone="success">{item.condition}</Badge>
-          {item.status !== "active" && <Badge tone="warning">{item.status}</Badge>}
+          {item.status !== "active" && (
+            <Badge tone="warning">{item.status}</Badge>
+          )}
         </div>
-        <h1 className="mt-4 text-4xl font-extrabold tracking-[-0.045em]">{item.title}</h1>
+        <h1 className="mt-4 text-3xl font-extrabold sm:text-4xl tracking-[-0.045em]">
+          {item.title}
+        </h1>
         <p className="mt-2 text-muted">
-          📍 Near {item.mrt_station ?? "—"} MRT · {item.planning_area ?? "Singapore"}
+          📍 Near {item.mrt_station ?? "—"} MRT ·{" "}
+          {item.planning_area ?? "Singapore"}
         </p>
-        {item.description && <p className="mt-6 whitespace-pre-line leading-7">{item.description}</p>}
+        <p className="mt-4 text-2xl font-extrabold">
+          {money(item.price_day)}{" "}
+          <span className="text-sm font-normal text-muted">/ day</span>
+        </p>
+        {item.description && (
+          <p className="mt-6 whitespace-pre-line leading-7">
+            {item.description}
+          </p>
+        )}
 
         <div className="mt-8 grid gap-3 sm:grid-cols-4">
           <Price label="Per day" value={item.price_day} />
@@ -60,7 +83,9 @@ export function ListingView({ id }: { id: string }) {
         </div>
 
         <Card className="mt-8">
-          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-muted">Lender</p>
+          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-muted">
+            Lender
+          </p>
           <div className="mt-3 flex items-center gap-3">
             <span className="grid size-11 place-items-center rounded-full bg-sage font-extrabold">
               {item.owner_display_name.slice(0, 1)}
@@ -77,13 +102,29 @@ export function ListingView({ id }: { id: string }) {
           <Reviews userId={item.owner_id} />
         </Card>
         <p className="mt-6 text-xs leading-5 text-muted">
-          Exact addresses are never shown. You arrange the pickup point with the lender after booking.
+          Exact addresses are never shown. You arrange the pickup point with the
+          lender after booking.
         </p>
       </div>
 
-      <aside className="lg:sticky lg:top-28 lg:h-fit">
-        {isOwner ? <OwnerPanel listing={item} onChange={listing.setData} /> : <BookingPanel listing={item} />}
+      <aside
+        id="booking-details"
+        className="scroll-mt-24 lg:sticky lg:top-28 lg:h-fit"
+      >
+        {isOwner ? (
+          <OwnerPanel listing={item} onChange={listing.setData} />
+        ) : (
+          <BookingPanel listing={item} />
+        )}
       </aside>
+      {!isOwner && (
+        <a className="mobile-booking-link" href="#booking-details">
+          <span>
+            {money(item.price_day)} <small>/ day</small>
+          </span>
+          <span>Choose dates →</span>
+        </a>
+      )}
     </div>
   );
 }
@@ -94,13 +135,20 @@ function Gallery({ listing }: { listing: Schemas["ListingDetail"] }) {
   if (photos.length <= 1) {
     return (
       <div className="mt-4 overflow-hidden rounded-card">
-        <ListingPhoto className="h-80" listing={listing} />
+        <ListingPhoto
+          className="aspect-[4/3] sm:aspect-[3/2]"
+          listing={listing}
+        />
       </div>
     );
   }
   return (
     <div className="mt-4">
-      <img alt={`${listing.title}, photo ${index + 1}`} className="h-80 w-full rounded-card object-cover" src={photos[index]} />
+      <img
+        alt={`${listing.title}, photo ${index + 1}`}
+        className="aspect-[4/3] w-full rounded-card object-cover sm:aspect-[3/2]"
+        src={photos[index]}
+      />
       <div className="mt-3 flex gap-2 overflow-x-auto">
         {photos.map((url, i) => (
           <button
@@ -122,13 +170,17 @@ function Price({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="rounded-xl bg-forest-soft p-4">
       <p className="text-xs font-bold text-muted">{label}</p>
-      <p className="mt-1 text-lg font-extrabold">{value ? money(value) : "Not offered"}</p>
+      <p className="mt-1 text-lg font-extrabold">
+        {value ? money(value) : "Not offered"}
+      </p>
     </div>
   );
 }
 
 function Reviews({ userId }: { userId: string }) {
-  const reviews = useApi<Schemas["Review"][]>(`/reviews?user_id=${userId}&limit=3`);
+  const reviews = useApi<Schemas["Review"][]>(
+    `/reviews?user_id=${userId}&limit=3`,
+  );
   if (!reviews.data?.length) return null;
   return (
     <ul className="mt-5 space-y-3 border-t border-line pt-5">
@@ -185,11 +237,18 @@ function OwnerPanel({
         </div>
       )}
       <div className="mt-5 flex flex-col gap-3">
-        <Button busy={busy} onClick={toggle} variant={next === "paused" ? "secondary" : "primary"}>
+        <Button
+          busy={busy}
+          onClick={toggle}
+          variant={next === "paused" ? "secondary" : "primary"}
+        >
           {next === "paused" ? "Pause listing" : "Reactivate listing"}
         </Button>
-        <Link className="text-center text-sm font-bold underline" href="/dashboard/lender">
-          Go to your lender dashboard
+        <Link
+          className="text-center text-sm font-bold underline"
+          href={`/listings/${listing.id}/edit`}
+        >
+          Manage details, prices & open dates
         </Link>
       </div>
     </Card>
