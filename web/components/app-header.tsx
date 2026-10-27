@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Brand } from "./brand";
 import { useSession } from "./session";
 
 const links = [
@@ -35,13 +36,7 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-20 border-b border-[#ece8df] bg-cream/95 backdrop-blur">
       <div className="mx-auto flex min-h-20 max-w-7xl items-center justify-between gap-3 px-4 sm:gap-6 sm:px-5 lg:px-8">
-        <Link className="flex items-center gap-3 text-2xl font-extrabold tracking-[-0.06em]" href="/">
-          <span className="grid size-9 -rotate-6 place-items-center rounded-xl bg-orange">↗</span>
-          <span>
-            Pass<span className="text-[#d8793f]">It</span>
-            <small className="block text-[8px] tracking-[0.22em] text-[#577364]">RENT • SHARE • REPEAT</small>
-          </span>
-        </Link>
+        <Brand href="/" />
         <nav className="hidden items-center gap-7 text-sm font-bold lg:flex" aria-label="Main navigation">
           {visible.map(navLink)}
         </nav>

@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { AppHeader } from "@/components/app-header";
 import { FeaturedListings } from "@/components/featured-listings";
 import { CATEGORIES } from "@/lib/catalogue";
 
@@ -9,10 +8,6 @@ const POPULAR_STATIONS = ["Bishan", "Bugis", "Clementi", "Jurong East", "Tampine
 export default function Home() {
   return (
     <>
-      <div className="bg-[#173f30] px-4 py-2 text-center text-xs font-bold text-[#f7e6bd]">
-        The things you need, from people nearby. <span className="text-[#b8d4c0]">Singapore prototype</span>
-      </div>
-      <AppHeader />
       <main>
         <section className="mx-auto mt-7 grid max-w-7xl overflow-hidden rounded-3xl bg-[#194b37] text-white lg:grid-cols-[1.1fr_.9fr]">
           <div className="px-7 py-14 lg:px-14 lg:py-20">

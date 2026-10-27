@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import { MockProvider } from "@/components/mock-provider";
-import { SessionProvider } from "@/components/session";
 
 import "./globals.css";
 
@@ -15,9 +14,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="en">
       <body>
-        <MockProvider>
-          <SessionProvider>{children}</SessionProvider>
-        </MockProvider>
+        <MockProvider>{children}</MockProvider>
       </body>
     </html>
   );
