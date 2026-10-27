@@ -20,11 +20,12 @@ export function BookingStep({
   id: string;
   eyebrow: string;
   title: string;
-  children: (booking: Schemas["Booking"]) => ReactNode;
+  children: (booking: Schemas["Booking"], reload: () => void) => ReactNode;
 }) {
   const booking = useApi<Schemas["Booking"]>(`/bookings/${id}`);
   if (booking.loading) return <Spinner label="Loading booking…" />;
-  if (booking.error || !booking.data) return <Alert>{booking.error?.message ?? "Booking not found."}</Alert>;
+  if (booking.error || !booking.data)
+    return <Alert>{booking.error?.message ?? "Booking not found."}</Alert>;
   const b = booking.data;
   return (
     <>
@@ -37,17 +38,24 @@ export function BookingStep({
           title={title}
           description={
             <span className="flex flex-wrap items-center gap-2">
-              {b.listing_title} · {dateRange(b.start_date, b.end_date)} <BookingStateBadge state={b.state} />
+              {b.listing_title} · {dateRange(b.start_date, b.end_date)}{" "}
+              <BookingStateBadge state={b.state} />
             </span>
           }
         />
       </div>
-      {children(b)}
+      {children(b, booking.reload)}
     </>
   );
 }
 
-export function WrongStep({ booking, message }: { booking: Schemas["Booking"]; message: string }) {
+export function WrongStep({
+  booking,
+  message,
+}: {
+  booking: Schemas["Booking"];
+  message: string;
+}) {
   return (
     <Alert tone="info" title={message}>
       <Link className="font-bold underline" href={`/bookings/${booking.id}`}>
