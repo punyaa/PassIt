@@ -47,6 +47,7 @@ async def book(
     start: int = 0,
     end: int = 2,
     duration_type: str = "day",
+    payment_method_token: str = "pm_mock_success",
 ) -> httpx.Response:
     return await client.post(
         "/bookings",
@@ -55,6 +56,7 @@ async def book(
             "start_date": days(start),
             "end_date": days(end),
             "duration_type": duration_type,
+            "payment_method_token": payment_method_token,
         },
         headers=user.headers,
     )

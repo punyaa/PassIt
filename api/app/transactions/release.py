@@ -8,7 +8,8 @@ from uuid import UUID
 from sqlalchemy import select
 
 from app.core.db import get_sessionmaker
-from app.models import Booking, LedgerEntry
+from app.models import Booking, LedgerEntry, Listing
+from app.payments import service as payment_service
 from app.transactions import service
 
 logger = logging.getLogger(__name__)
@@ -37,6 +38,10 @@ async def handle_release(booking_id: UUID | str, now: datetime | None = None) ->
         elif booking.fee_release_at is None or booking.fee_release_at > now:
             status = "not_due"
         else:
+            lender_id = await db.scalar(
+                select(Listing.owner_id).where(Listing.id == booking.listing_id)
+            )
+            await payment_service.payout_fee(db, booking, lender_id)
             await service.release_fee(db, booking)
             status = "released"
     logger.info("fee release %s: %s", booking_id, status)

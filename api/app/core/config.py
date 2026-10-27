@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     llm_api_key: str | None = None
     llm_model: str | None = None
     llm_timeout_seconds: float = 8.0
-    payment_mode: str = "mock"
+    payment_mode: Literal["mock"] = "mock"
 
     # Database pooling. Tests use NullPool so connections never outlive an event loop.
     database_null_pool: bool = False

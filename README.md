@@ -114,7 +114,8 @@ Next.js web  →  FastAPI  →  PostgreSQL 16
 - Alembic owns database schema changes.
 - A PostgreSQL exclusion constraint prevents overlapping active bookings.
 - Monetary values use exact decimal types and every ledger event must balance to zero.
-- Payments and deposits are simulated ledger entries; the prototype does not move real money.
+- Payments and deposits use a persisted mock gateway plus balanced ledger entries; the prototype
+  records deterministic charges, refunds and lender payouts but does not move real money.
 - Public listings use approximate neighbourhood information, never exact addresses.
 - Staging is deployed on AWS from `infra/terraform/environments/staging/` (see `infra/README.md`). The demo environment is defined and plans cleanly but is not deployed yet.
 

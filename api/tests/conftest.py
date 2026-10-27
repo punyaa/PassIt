@@ -36,7 +36,10 @@ from alembic import command  # noqa: E402
 from app.auth.dependencies import issue_access_token  # noqa: E402
 from app.main import app  # noqa: E402
 
-TABLES = "reviews, checklists, media, ledger_entries, bookings, availability, listings, users"
+TABLES = (
+    "payment_operations, payments, reviews, checklists, media, ledger_entries, "
+    "bookings, availability, listings, users"
+)
 
 
 def _libpq_url(url: str, dbname: str | None = None) -> str:

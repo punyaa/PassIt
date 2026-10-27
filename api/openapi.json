@@ -291,6 +291,18 @@
             "title": "Listing Id",
             "type": "string"
           },
+          "payment_method_token": {
+            "default": "pm_mock_success",
+            "enum": [
+              "pm_mock_success",
+              "pm_mock_declined",
+              "pm_mock_insufficient_funds",
+              "pm_mock_expired",
+              "pm_mock_processing_error"
+            ],
+            "title": "Payment Method Token",
+            "type": "string"
+          },
           "start_date": {
             "format": "date",
             "title": "Start Date",
@@ -304,6 +316,98 @@
           "duration_type"
         ],
         "title": "BookingCreate",
+        "type": "object"
+      },
+      "BookingPaymentResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "booking_id": {
+            "format": "uuid",
+            "title": "Booking Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency": {
+            "const": "SGD",
+            "title": "Currency",
+            "type": "string"
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Code"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "operations": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentOperationResponse"
+            },
+            "title": "Operations",
+            "type": "array"
+          },
+          "payment_method_label": {
+            "title": "Payment Method Label",
+            "type": "string"
+          },
+          "provider": {
+            "const": "mock",
+            "title": "Provider",
+            "type": "string"
+          },
+          "provider_reference": {
+            "title": "Provider Reference",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "captured",
+              "partially_refunded",
+              "refunded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "booking_id",
+          "amount",
+          "currency",
+          "status",
+          "provider",
+          "provider_reference",
+          "payment_method_label",
+          "failure_code",
+          "created_at",
+          "updated_at",
+          "operations"
+        ],
+        "title": "BookingPaymentResponse",
         "type": "object"
       },
       "ChecklistItem": {
@@ -1218,6 +1322,81 @@
         "title": "MrtStation",
         "type": "object"
       },
+      "PaymentOperationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Code"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "operation": {
+            "enum": [
+              "charge",
+              "refund",
+              "payout"
+            ],
+            "title": "Operation",
+            "type": "string"
+          },
+          "provider_reference": {
+            "title": "Provider Reference",
+            "type": "string"
+          },
+          "recipient_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipient Id"
+          },
+          "status": {
+            "enum": [
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "operation",
+          "amount",
+          "status",
+          "recipient_id",
+          "provider_reference",
+          "failure_code",
+          "created_at"
+        ],
+        "title": "PaymentOperationResponse",
+        "type": "object"
+      },
       "PresignRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1897,6 +2076,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "402": {
+            "description": "Mock payment failed"
           },
           "409": {
             "description": "Dates already booked or outside availability"
@@ -3338,6 +3520,70 @@
         "summary": "Presign Media Upload",
         "tags": [
           "media"
+        ]
+      }
+    },
+    "/v1/payments/bookings/{booking_id}": {
+      "get": {
+        "operationId": "getBookingPayment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "booking_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Booking Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingPaymentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Booking Payment",
+        "tags": [
+          "payments"
         ]
       }
     },

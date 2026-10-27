@@ -10,6 +10,7 @@ import { ApiError, apiPost, apiRequest, type Schemas, withQuery } from "@/lib/ap
 import { addDays, dateRange, inclusiveDays, isoDate, money } from "@/lib/format";
 
 type Duration = Schemas["BookingCreate"]["duration_type"];
+type PaymentMethod = NonNullable<Schemas["BookingCreate"]["payment_method_token"]>;
 const UNIT_DAYS: Record<Duration, number> = { day: 1, week: 7, month: 30 };
 
 /** Mirrors the API's pricing: whole units of the chosen duration, rounded up. */
@@ -32,6 +33,7 @@ export function BookingPanel({ listing }: { listing: Schemas["ListingDetail"] })
     (d) => ({ day: listing.price_day, week: listing.price_week, month: listing.price_month })[d],
   );
   const [duration, setDuration] = useState<Duration>("day");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pm_mock_success");
   const [availability, setAvailability] = useState<Schemas["AvailabilityResponse"]>();
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string>();
@@ -69,6 +71,7 @@ export function BookingPanel({ listing }: { listing: Schemas["ListingDetail"] })
         start_date: start,
         end_date: end,
         duration_type: duration,
+        payment_method_token: paymentMethod,
       });
       router.push(`/bookings/${booking.id}?new=1`);
     } catch (caught) {
@@ -159,6 +162,24 @@ export function BookingPanel({ listing }: { listing: Schemas["ListingDetail"] })
         </dl>
       )}
 
+      <div className="mt-4 border-t border-line pt-4">
+        <Field
+          label="Mock payment method"
+          hint="For prototype testing only. No real card or payment information is collected."
+        >
+          <Select
+            onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
+            value={paymentMethod}
+          >
+            <option value="pm_mock_success">Successful payment</option>
+            <option value="pm_mock_declined">Declined payment</option>
+            <option value="pm_mock_insufficient_funds">Insufficient funds</option>
+            <option value="pm_mock_expired">Expired payment method</option>
+            <option value="pm_mock_processing_error">Temporary processing error</option>
+          </Select>
+        </Field>
+      </div>
+
       {error && (
         <div className="mt-4">
           <Alert>{error}</Alert>
@@ -168,7 +189,7 @@ export function BookingPanel({ listing }: { listing: Schemas["ListingDetail"] })
       <div className="mt-5">
         {user ? (
           <Button busy={busy} className="w-full" disabled={!canBook} onClick={book} variant="accent">
-            Book now
+            Pay and book
           </Button>
         ) : (
           <Link

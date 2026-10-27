@@ -62,6 +62,12 @@ async def test_duplicate_release_deliveries_release_once(client, make_user, sql)
         booking["id"],
     )
     assert released[0][0] == 2  # one balanced pair
+    payouts = sql(
+        "SELECT count(*) FROM payment_operations po JOIN payments p ON p.id = po.payment_id "
+        "WHERE p.booking_id = %s AND po.operation = 'payout'",
+        booking["id"],
+    )
+    assert payouts[0][0] == 1
 
 
 async def test_deadlock_between_overlapping_requests_is_a_conflict_not_a_500(
