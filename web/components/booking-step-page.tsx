@@ -7,6 +7,7 @@ import type { Schemas } from "@/lib/api-client";
 import { dateRange } from "@/lib/format";
 import { useApi } from "@/lib/use-api";
 
+import { useAccountData } from "./account-data";
 import { BookingStateBadge } from "./booking-state";
 import { Alert, PageHeader, Spinner } from "./ui";
 
@@ -22,6 +23,7 @@ export function BookingStep({
   title: string;
   children: (booking: Schemas["Booking"], reload: () => void) => ReactNode;
 }) {
+  const { rentals } = useAccountData();
   const booking = useApi<Schemas["Booking"]>(`/bookings/${id}`);
   if (booking.loading) return <Spinner label="Loading booking…" />;
   if (booking.error || !booking.data)
@@ -44,7 +46,10 @@ export function BookingStep({
           }
         />
       </div>
-      {children(b, booking.reload)}
+      {children(b, () => {
+        booking.reload();
+        rentals.reload();
+      })}
     </>
   );
 }

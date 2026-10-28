@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 
+import { SaveListingButton } from "@/components/listing-tile";
 import { ListingPhoto } from "@/components/listing-card";
 import { useSession } from "@/components/session";
 import { Alert, Badge, Button, Card, Spinner } from "@/components/ui";
@@ -50,6 +51,9 @@ export function ListingView({ id }: { id: string }) {
         <Link className="text-sm font-bold text-muted" href={searchHref}>
           ← Back to search
         </Link>
+        <div className="mt-4 flex justify-end">
+          <SaveListingButton id={item.id} />
+        </div>
         <Gallery listing={item} />
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <Badge>{item.category}</Badge>
@@ -91,7 +95,12 @@ export function ListingView({ id }: { id: string }) {
               {item.owner_display_name.slice(0, 1)}
             </span>
             <div>
-              <strong>{item.owner_display_name}</strong>
+              <Link
+                className="font-bold underline"
+                href={`/users/${item.owner_id}`}
+              >
+                {item.owner_display_name}
+              </Link>
               <p className="text-sm text-muted">
                 {item.owner_rating
                   ? `★ ${item.owner_rating.toFixed(1)} from ${item.owner_review_count} review${item.owner_review_count === 1 ? "" : "s"}`

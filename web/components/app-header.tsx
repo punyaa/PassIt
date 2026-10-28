@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useRentalReminders } from "./account-data";
 import { Brand } from "./brand";
 import { useSession } from "./session";
 
@@ -27,6 +28,7 @@ const links = [
 export function AppHeader() {
   const { user, loading } = useSession();
   const pathname = usePathname();
+  const { reminders } = useRentalReminders();
   const active =
     pathname === "/"
       ? "/home"
@@ -36,7 +38,7 @@ export function AppHeader() {
               pathname,
             ) || pathname.endsWith("/edit")
           ? "/profile"
-          : pathname.startsWith("/listings/")
+          : pathname.startsWith("/listings/") || pathname.startsWith("/users/")
             ? "/search"
             : pathname;
   function navigation(mobile: boolean) {
@@ -53,6 +55,12 @@ export function AppHeader() {
             href={link.href}
             aria-current={active.startsWith(link.href) ? "page" : undefined}
             className="app-nav-link"
+            aria-label={link.label}
+            title={
+              link.label === "Rentals" && reminders.length
+                ? `${reminders.length} rental reminders`
+                : undefined
+            }
           >
             <svg
               aria-hidden="true"
@@ -67,7 +75,17 @@ export function AppHeader() {
             >
               <path d={link.path} />
             </svg>
-            <span>{link.label}</span>
+            <span>
+              {link.label}
+              {link.label === "Rentals" && reminders.length > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="ml-1 rounded-full bg-orange px-1.5 py-0.5 text-[10px] text-ink"
+                >
+                  {reminders.length}
+                </span>
+              )}
+            </span>
           </Link>
         ))}
       </nav>

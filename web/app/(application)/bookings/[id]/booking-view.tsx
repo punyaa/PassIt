@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { ConfirmAction } from "@/components/confirm-action";
+import { useAccountData } from "@/components/account-data";
 import { BookingStateBadge } from "@/components/booking-state";
 import { LedgerTable, settlement } from "@/components/booking-summary";
 import { Alert, Card, LinkButton, Spinner } from "@/components/ui";
@@ -28,6 +29,7 @@ const STEPS: { state: Booking["state"]; label: string }[] = [
 ];
 
 export function BookingView({ id }: { id: string }) {
+  const { rentals } = useAccountData();
   const booking = useApi<Booking>(`/bookings/${id}`);
   const ledger = useApi<Schemas["LedgerEntry"][]>(`/bookings/${id}/ledger`);
   const isNew = useSearchParams().get("new") === "1";
@@ -57,6 +59,7 @@ export function BookingView({ id }: { id: string }) {
   const refresh = (updated: Booking) => {
     booking.setData(updated);
     ledger.reload();
+    rentals.reload();
   };
 
   return (

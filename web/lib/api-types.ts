@@ -38,7 +38,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update Profile */
+        patch: operations["updateProfile"];
         trace?: never;
     };
     "/v1/auth/session": {
@@ -404,6 +405,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/listings/{listing_id}/manage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Managed Listing */
+        get: operations["getManagedListing"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/media": {
         parameters: {
             query?: never;
@@ -466,6 +484,58 @@ export interface paths {
          *     once each per booking, after the item is returned.
          */
         post: operations["createReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/saved-listings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Saved Listings */
+        get: operations["listSavedListings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/saved-listings/{listing_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save Listing */
+        put: operations["saveListing"];
+        post?: never;
+        /** Unsave Listing */
+        delete: operations["unsaveListing"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Profile */
+        get: operations["getPublicProfile"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -650,6 +720,10 @@ export interface components {
         };
         /** CurrentUserResponse */
         CurrentUserResponse: {
+            /** Avatar Url */
+            avatar_url: string | null;
+            /** Bio */
+            bio: string | null;
             /** Display Name */
             display_name: string;
             /** Email */
@@ -852,6 +926,11 @@ export interface components {
              */
             owner_review_count: number;
             /**
+             * Photo Keys
+             * @default []
+             */
+            photo_keys: string[];
+            /**
              * Photo Urls
              * @default []
              */
@@ -874,12 +953,20 @@ export interface components {
         };
         /** ListingUpdate */
         ListingUpdate: {
+            /** Category */
+            category?: string | null;
             /** Condition */
             condition?: string | null;
             /** Deposit */
             deposit?: number | string | null;
             /** Description */
             description?: string | null;
+            /** Mrt Station */
+            mrt_station?: string | null;
+            /** Photo Keys */
+            photo_keys?: string[] | null;
+            /** Postal Code */
+            postal_code?: string | null;
             /** Price Day */
             price_day?: number | string | null;
             /** Price Month */
@@ -914,7 +1001,7 @@ export interface components {
              * Stage
              * @enum {string}
              */
-            stage: "listing" | "handover" | "return";
+            stage: "listing" | "handover" | "return" | "avatar";
             /** Url */
             url: string;
         };
@@ -936,7 +1023,7 @@ export interface components {
              * Stage
              * @enum {string}
              */
-            stage: "listing" | "handover" | "return";
+            stage: "listing" | "handover" | "return" | "avatar";
         };
         /** PresignResponse */
         PresignResponse: {
@@ -979,6 +1066,38 @@ export interface components {
             condition: string;
             /** Title */
             title: string;
+        };
+        /** ProfileUpdate */
+        ProfileUpdate: {
+            /** Avatar Key */
+            avatar_key?: string | null;
+            /** Bio */
+            bio?: string | null;
+            /** Display Name */
+            display_name: string;
+        };
+        /** PublicProfile */
+        PublicProfile: {
+            /** Avatar Url */
+            avatar_url: string | null;
+            /** Bio */
+            bio: string | null;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Member Since
+             * Format: date-time
+             */
+            member_since: string;
+            /** Rating */
+            rating: number | null;
+            /** Review Count */
+            review_count: number;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
         };
         /** Review */
         Review: {
@@ -1107,6 +1226,41 @@ export interface operations {
             };
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentUserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    updateProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileUpdate"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -1605,6 +1759,8 @@ export interface operations {
                 category?: string | null;
                 mrt?: string | null;
                 planning_area?: string | null;
+                owner_id?: string | null;
+                sort?: "newest" | "price_asc" | "price_desc";
                 min_price?: number | string | null;
                 max_price?: number | string | null;
                 from?: string | null;
@@ -1898,6 +2054,39 @@ export interface operations {
             };
         };
     };
+    getManagedListing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listing_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListingDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     attachListingMedia: {
         parameters: {
             query?: never;
@@ -2022,6 +2211,130 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Review"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listSavedListings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Listing"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    saveListing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listing_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unsaveListing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listing_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getPublicProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicProfile"];
                 };
             };
             /** @description Validation Error */
