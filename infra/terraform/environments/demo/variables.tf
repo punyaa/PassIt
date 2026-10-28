@@ -43,3 +43,9 @@ variable "create_github_oidc_provider" {
   type        = bool
   default     = false
 }
+
+variable "github_oidc_subject_prefix" {
+  description = "How GitHub names this repository in its OIDC token (the immutable owner and repository IDs form). Null uses the name-based form."
+  type        = string
+  default     = "repo:punyaa@30744939/PassIt@1421865475"
+}
