@@ -340,6 +340,17 @@ async def update_listing(
     changes = request.model_dump(exclude_unset=True)
     if listing.status == "archived" and changes.get("status") in ("active", "paused"):
         await _require_listing_slot(db, user.id)
+    if changes.get("status") == "archived" and listing.status != "archived":
+        in_progress = await db.scalar(
+            select(
+                exists().where(Booking.listing_id == listing.id, Booking.state.in_(BLOCKING_STATES))
+            )
+        )
+        if in_progress:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "This listing has confirmed or active bookings. Finish or cancel them first.",
+            )
     for field, value in changes.items():
         if value is None and field in {"title", "condition", "price_day", "deposit", "status"}:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, f"{field} cannot be cleared")
