@@ -12,6 +12,7 @@ def mailer(monkeypatch):
     return load(
         "mailer",
         monkeypatch,
+        SEND_EMAILS="true",
         SENDER="PassIt <noreply@passit.test.org>",
         COPY_TO="team@school.edu",
         SITE_URL="https://site.example.org/",
@@ -179,3 +180,15 @@ def test_ses_refusing_one_address_does_not_stop_the_others(mailer, monkeypatch):
     result = mailer.handler(sns(event("booking.confirmed")))
     assert result == {"sent": 1, "not_sent": 1}
     assert ses.sent[0]["Destination"]["ToAddresses"] == ["lena@school.edu"]
+
+
+@pytest.mark.parametrize("setting", [None, "", "false", "no", "0"])
+def test_the_feature_is_off_unless_explicitly_switched_on(monkeypatch, setting):
+    env = {"SENDER": "x@school.edu"} | ({} if setting is None else {"SEND_EMAILS": setting})
+    monkeypatch.delenv("SEND_EMAILS", raising=False)
+    off = load("mailer", monkeypatch, **env)
+    ses = FakeSes()
+    monkeypatch.setattr(off, "_ses", lambda: ses)
+
+    assert off.handler(sns(event("booking.confirmed"))) == {"sent": 0, "not_sent": 0}
+    assert ses.sent == []  # not even attempted

@@ -27,3 +27,9 @@ variable "site_url" {
 variable "aws_region" {
   type = string
 }
+
+variable "enabled" {
+  description = "Send emails. False leaves everything deployed but the mailer ignores events, so the feature can be switched on and off without recreating anything."
+  type        = bool
+  default     = false
+}

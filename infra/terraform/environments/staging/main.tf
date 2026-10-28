@@ -41,6 +41,11 @@ provider "aws" {
   }
 }
 
+locals {
+  # The email feature's on/off switch. Needs both the switch and a sender address.
+  notifications_on = var.notifications_enabled && var.notification_sender != null
+}
+
 module "network" {
   source = "../../modules/network"
 
@@ -88,10 +93,10 @@ module "ecs_alb" {
       PASSIT_LLM_API_URL       = "https://soclaas-api.comp.nus.edu.sg/v1"
       PASSIT_LLM_MODEL         = "default"
     },
-    var.notification_sender == null ? {} : {
+    local.notifications_on ? {
       PASSIT_NOTIFICATIONS_BACKEND = "sns"
       PASSIT_EVENTS_TOPIC_ARN      = one(module.notifications[*].topic_arn)
-    },
+    } : {},
     var.release_image_tag == null ? {} : {
       PASSIT_SCHEDULER_BACKEND  = "eventbridge"
       PASSIT_RELEASE_LAMBDA_ARN = module.release_scheduler.lambda_arn
@@ -115,7 +120,7 @@ module "release_scheduler" {
   image_tag         = var.release_image_tag
 
   # Its result, including the fee.released event, reaches the mailer through the events topic.
-  forward_results   = var.notification_sender != null
+  forward_results   = local.notifications_on
   results_topic_arn = one(module.notifications[*].topic_arn)
 }
 
@@ -175,6 +180,7 @@ module "notifications" {
   copy_to           = var.notification_copy_to
   verify_recipients = var.notification_verify_recipients
   site_url          = "https://${module.cdn.cloudfront_domain}"
+  enabled           = var.notifications_enabled
 }
 
 # The API publishes booking events to the topic.

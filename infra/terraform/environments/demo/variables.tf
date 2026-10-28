@@ -73,3 +73,9 @@ variable "notification_verify_recipients" {
   type        = list(string)
   default     = []
 }
+
+variable "notifications_enabled" {
+  description = "Switch for booking and release emails. False (the default) sends nothing: the API stops publishing events and the mailer ignores any that arrive. Needs notification_sender too, and that must be an address on a domain you control with DKIM set up; a university or free-mail address is rejected by receivers that enforce DMARC."
+  type        = bool
+  default     = false
+}

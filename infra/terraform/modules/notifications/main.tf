@@ -90,9 +90,10 @@ resource "aws_lambda_function" "mailer" {
 
   environment {
     variables = {
-      SENDER   = "PassIt <${var.sender_address}>"
-      COPY_TO  = join(",", var.copy_to)
-      SITE_URL = var.site_url
+      SEND_EMAILS = tostring(var.enabled)
+      SENDER      = "PassIt <${var.sender_address}>"
+      COPY_TO     = join(",", var.copy_to)
+      SITE_URL    = var.site_url
     }
   }
 
