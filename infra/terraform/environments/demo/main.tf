@@ -145,6 +145,7 @@ module "github_oidc" {
   environment       = "demo"
   aws_region        = var.aws_region
   github_repository = var.github_repository
+  subject_prefix    = var.github_oidc_subject_prefix
   # The account has one GitHub OIDC provider. Staging creates it, so demo only looks it up
   # when both share an account; set true when building demo in a different account.
   create_oidc_provider = var.create_github_oidc_provider

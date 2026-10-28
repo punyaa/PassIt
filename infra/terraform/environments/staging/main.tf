@@ -148,6 +148,7 @@ module "github_oidc" {
   environment       = "staging"
   aws_region        = var.aws_region
   github_repository = var.github_repository
+  subject_prefix    = var.github_oidc_subject_prefix
   cluster_name      = module.ecs_alb.cluster_name
   ecr_repository_arns = [
     module.ecs_alb.api_repository_arn,
