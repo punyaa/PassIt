@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from fastapi import APIRouter, HTTPException, Response, status
-from pydantic import EmailStr, Field
+from pydantic import EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
@@ -9,6 +9,8 @@ from app.auth.dependencies import SESSION_COOKIE, CurrentUser, issue_access_toke
 from app.auth.passwords import hash_password, verify_password
 from app.core.config import get_settings
 from app.core.db import DbSession
+from app.integrations.storage import get_storage
+from app.media.service import require_owned_keys
 from app.models import User
 from app.schemas import ApiModel
 
@@ -37,6 +39,8 @@ class CurrentUserResponse(ApiModel):
     user_id: str
     display_name: str
     email: str
+    bio: str | None
+    avatar_url: str | None
 
 
 def _normalise(email: str) -> str:
@@ -101,5 +105,37 @@ async def delete_session(response: Response) -> None:
 async def get_current_user(user: CurrentUser) -> CurrentUserResponse:
     """Who the session belongs to. 401 when signed out."""
     return CurrentUserResponse(
-        user_id=str(user.id), display_name=user.display_name, email=user.email
+        user_id=str(user.id),
+        display_name=user.display_name,
+        email=user.email,
+        bio=user.bio,
+        avatar_url=get_storage().view_url(user.avatar_key) if user.avatar_key else None,
     )
+
+
+class ProfileUpdate(ApiModel):
+    display_name: str = Field(min_length=1, max_length=80)
+    bio: str | None = Field(default=None, max_length=500)
+    avatar_key: str | None = Field(default=None, min_length=1, max_length=512)
+
+    @field_validator("display_name")
+    @classmethod
+    def nonblank_name(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Display name cannot be blank")
+        return value.strip()
+
+
+@router.patch("/me", response_model=CurrentUserResponse, operation_id="updateProfile")
+async def update_profile(
+    request: ProfileUpdate, user: CurrentUser, db: DbSession
+) -> CurrentUserResponse:
+    changes = request.model_dump(exclude_unset=True)
+    if changes.get("avatar_key"):
+        require_owned_keys([changes["avatar_key"]], "avatar", user.id)
+    for field, value in changes.items():
+        if field == "bio" and value is not None:
+            value = value.strip() or None
+        setattr(user, field, value)
+    await db.commit()
+    return await get_current_user(user)

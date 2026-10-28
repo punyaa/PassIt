@@ -5,7 +5,7 @@ from collections import defaultdict
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -46,15 +46,23 @@ async def attach_media(
     taken = await db.scalars(select(Media.s3_key).where(Media.s3_key.in_(keys)))
     if taken.first():
         raise HTTPException(status.HTTP_409_CONFLICT, "Media already attached")
+    start = 0
+    if stage == "listing":
+        start = await db.scalar(
+            select(func.coalesce(func.max(Media.position) + 1, 0)).where(
+                Media.listing_id == listing_id, Media.stage == "listing"
+            )
+        )
     rows = [
         Media(
             s3_key=key,
+            position=start + position,
             stage=stage,
             uploaded_by=user_id,
             listing_id=listing_id,
             booking_id=booking_id,
         )
-        for key in keys
+        for position, key in enumerate(keys)
     ]
     db.add_all(rows)
     await db.flush()
@@ -70,7 +78,7 @@ async def listing_photos(
     rows = await db.scalars(
         select(Media)
         .where(Media.listing_id.in_(listing_ids), Media.stage == "listing")
-        .order_by(Media.created_at, Media.id)
+        .order_by(Media.position, Media.created_at, Media.id)
     )
     storage = get_storage()
     urls: dict[UUID, list[str]] = defaultdict(list)

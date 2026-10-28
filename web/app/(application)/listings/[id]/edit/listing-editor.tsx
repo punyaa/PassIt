@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { ConfirmAction } from "@/components/confirm-action";
+import { AvailabilityCalendar } from "@/components/availability-calendar";
+import { ListingPhotosEditor } from "@/components/listing-photos-editor";
 import { ListingPhoto } from "@/components/listing-card";
 import { useSession } from "@/components/session";
 import {
@@ -12,14 +15,13 @@ import {
   Card,
   Field,
   Input,
-  LinkButton,
   PageHeader,
   Select,
   Spinner,
   Textarea,
 } from "@/components/ui";
 import { apiRequest, type Schemas, withQuery } from "@/lib/api-client";
-import { CONDITIONS } from "@/lib/catalogue";
+import { CATEGORIES, CONDITIONS } from "@/lib/catalogue";
 import { addDays, isoDate } from "@/lib/format";
 import { useApi } from "@/lib/use-api";
 
@@ -27,7 +29,7 @@ type Listing = Schemas["ListingDetail"];
 type Window = Schemas["DateWindow"];
 
 export function ListingEditor({ id }: { id: string }) {
-  const listing = useApi<Listing>(`/listings/${id}`);
+  const listing = useApi<Listing>(`/listings/${id}/manage`);
   const { user } = useSession();
   if (listing.loading) return <Spinner label="Loading your listing…" />;
   if (listing.error || !listing.data)
@@ -65,45 +67,31 @@ export function ListingEditor({ id }: { id: string }) {
           >
             {listing.data.status}
           </Badge>
-          <div className="mt-2">
-            <Link className="text-sm underline" href={`/listings/${id}`}>
-              View listing →
-            </Link>
-          </div>
+          {listing.data.status !== "archived" && (
+            <div className="mt-2">
+              <Link className="text-sm underline" href={`/listings/${id}`}>
+                View listing →
+              </Link>
+            </div>
+          )}
         </div>
       </div>
       <DetailsForm listing={listing.data} onSave={listing.setData} />
+      <ListingPhotosEditor listing={listing.data} onSave={listing.setData} />
       <AvailabilityEditor id={id} />
-      <DeleteListing id={id} />
+      {listing.data.status !== "archived" && <DeleteListing id={id} />}
     </>
   );
 }
 
 function DeleteListing({ id }: { id: string }) {
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   async function remove() {
-    if (
-      !window.confirm(
-        "Delete this listing? It will be removed from search and can't be booked. Existing booking history is kept.",
-      )
-    )
-      return;
-    setBusy(true);
-    setError(null);
-    try {
-      await apiRequest<Listing>(`/listings/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: "archived" }),
-      });
-      router.push("/listings/manage");
-    } catch (caught) {
-      setError(
-        caught instanceof Error ? caught.message : "Couldn't delete listing.",
-      );
-      setBusy(false);
-    }
+    await apiRequest<Listing>(`/listings/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "archived" }),
+    });
+    router.push("/listings/manage");
   }
   return (
     <section className="mt-6">
@@ -113,10 +101,15 @@ function DeleteListing({ id }: { id: string }) {
           Removes the listing from search and frees up a listing slot. Listings
           with confirmed or active bookings can't be deleted.
         </p>
-        {error && <Alert>{error}</Alert>}
-        <Button busy={busy} type="button" variant="secondary" onClick={remove}>
-          Delete listing
-        </Button>
+        <ConfirmAction
+          title="Delete this listing?"
+          description="The listing will be archived and removed from search. Existing booking history is kept. You can restore it from My listings."
+          trigger="Delete listing"
+          confirmLabel="Delete listing"
+          variant="danger"
+          onConfirm={remove}
+          disabled={false}
+        />
       </Card>
     </section>
   );
@@ -133,12 +126,16 @@ function DetailsForm({
     title: listing.title,
     description: listing.description ?? "",
     condition: listing.condition,
+    category: listing.category,
+    mrt_station: listing.mrt_station ?? "",
+    postal_code: "",
     price_day: listing.price_day,
     price_week: listing.price_week ?? "",
     price_month: listing.price_month ?? "",
     deposit: listing.deposit,
     status: listing.status,
   });
+  const stations = useApi<Schemas["MrtStation"][]>("/listings/mrt-stations");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -157,6 +154,7 @@ function DetailsForm({
         method: "PATCH",
         body: JSON.stringify({
           ...form,
+          postal_code: form.postal_code || undefined,
           title: form.title.trim(),
           description: form.description.trim() || null,
           price_week: form.price_week || null,
@@ -193,6 +191,44 @@ function DetailsForm({
             onChange={set("description")}
           />
         </Field>
+        <Field label="Category">
+          <Select value={form.category} onChange={set("category")}>
+            {!CATEGORIES.some(
+              (category) => category.name === form.category,
+            ) && <option>{form.category}</option>}
+            {CATEGORIES.map((category) => (
+              <option key={category.name} value={category.name}>
+                {category.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field
+            label="Postal code"
+            hint="Optional; used to find your nearest MRT, then discarded."
+          >
+            <Input
+              inputMode="numeric"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              value={form.postal_code}
+              onChange={set("postal_code")}
+            />
+          </Field>
+          <Field label="Nearest MRT">
+            <Select
+              required={!form.postal_code}
+              value={form.mrt_station}
+              onChange={set("mrt_station")}
+            >
+              <option value="">Choose a station</option>
+              {stations.data?.map((station) => (
+                <option key={station.name}>{station.name}</option>
+              ))}
+            </Select>
+          </Field>
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Condition">
             <Select value={form.condition} onChange={set("condition")}>
@@ -204,13 +240,14 @@ function DetailsForm({
               ))}
             </Select>
           </Field>
-          <Field label="Visibility">
+          <Field
+            label="Visibility"
+            hint="Archiving is reversible and preserves existing bookings."
+          >
             <Select value={form.status} onChange={set("status")}>
               <option value="active">Active — visible in search</option>
               <option value="paused">Paused — hidden from search</option>
-              {listing.status === "archived" && (
-                <option value="archived">Archived</option>
-              )}
+              <option value="archived">Archived — frees a listing slot</option>
             </Select>
           </Field>
         </div>
@@ -247,6 +284,7 @@ function DetailsForm({
 }
 
 function AvailabilityEditor({ id }: { id: string }) {
+  const [version, setVersion] = useState(0);
   const today = isoDate(new Date());
   const availability = useApi<Schemas["AvailabilityResponse"]>(
     withQuery(`/listings/${id}/availability`, {
@@ -256,6 +294,7 @@ function AvailabilityEditor({ id }: { id: string }) {
   );
   return (
     <section className="mt-6">
+      <AvailabilityCalendar id={id} version={version} />
       {availability.loading && <Spinner label="Loading open dates…" />}
       {availability.error && (
         <Alert>
@@ -270,13 +309,22 @@ function AvailabilityEditor({ id }: { id: string }) {
           key={id}
           id={id}
           initial={availability.data.windows}
+          onSaved={() => setVersion((value) => value + 1)}
         />
       )}
     </section>
   );
 }
 
-function AvailabilityForm({ id, initial }: { id: string; initial: Window[] }) {
+function AvailabilityForm({
+  id,
+  initial,
+  onSaved,
+}: {
+  id: string;
+  initial: Window[];
+  onSaved: () => void;
+}) {
   const [windows, setWindows] = useState<Window[]>(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -311,6 +359,7 @@ function AvailabilityForm({ id, initial }: { id: string; initial: Window[] }) {
         { method: "PUT", body: JSON.stringify({ windows }) },
       );
       setWindows(updated.windows);
+      onSaved();
       setSaved(true);
     } catch (caught) {
       setError(

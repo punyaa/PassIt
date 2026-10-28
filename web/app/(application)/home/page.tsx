@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { CatalogueGrid } from "@/components/catalogue-grid";
 import { PageShell } from "@/components/page-shell";
-import { NeedsAction } from "@/components/dashboard-bookings";
+import { RentalReminders } from "@/components/rental-reminders";
 import { useSession } from "@/components/session";
 import { Button, Input, LinkButton } from "@/components/ui";
 import { CATEGORIES } from "@/lib/catalogue";
@@ -53,20 +53,7 @@ export default function HomePage() {
           ))}
         </div>
       </section>
-      {user && (
-        <section className="mb-9 rounded-card border border-line bg-white p-5">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="text-xl font-bold">Your rentals</h2>
-            <Link href="/bookings" className="text-sm font-bold underline">
-              View all
-            </Link>
-          </div>
-          <div className="grid gap-5 lg:grid-cols-2">
-            <NeedsAction role="borrower" compact={true} />
-            <NeedsAction role="lender" compact={true} />
-          </div>
-        </section>
-      )}
+      {user && <RentalReminders />}
       <section>
         <div className="mb-5 flex items-center justify-between gap-3">
           <h2 className="text-2xl font-bold tracking-tight">Ready to rent</h2>

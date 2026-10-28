@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 
-import { ListingCard } from "@/components/listing-card";
+import { ListingTile } from "@/components/listing-tile";
 import {
   Alert,
   Button,
@@ -28,6 +28,7 @@ const FILTERS = [
   "max_price",
   "from",
   "to",
+  "sort",
 ] as const;
 type Filters = Record<(typeof FILTERS)[number], string>;
 
@@ -78,7 +79,7 @@ export function SearchView() {
   const set = (key: keyof Filters) => (e: { target: { value: string } }) =>
     setDraft((current) => ({ ...current, [key]: e.target.value }));
   const activeCount = FILTERS.filter(
-    (key) => key !== "q" && applied[key],
+    (key) => key !== "q" && key !== "sort" && applied[key],
   ).length;
 
   return (
@@ -112,6 +113,13 @@ export function SearchView() {
           className={`${filtersOpen ? "block" : "hidden"} h-fit space-y-5 rounded-card border border-line bg-white p-5 lg:sticky lg:top-28 lg:block`}
           onSubmit={apply}
         >
+          <Field label="Sort by">
+            <Select value={draft.sort || "newest"} onChange={set("sort")}>
+              <option value="newest">Newest first</option>
+              <option value="price_asc">Price: low to high</option>
+              <option value="price_desc">Price: high to low</option>
+            </Select>
+          </Field>
           <Field label="Category">
             <Select onChange={set("category")} value={draft.category}>
               <option value="">All categories</option>
@@ -222,7 +230,7 @@ export function SearchView() {
               </p>
               <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
                 {listings.map((listing) => (
-                  <ListingCard
+                  <ListingTile
                     href={withQuery(`/listings/${listing.id}`, {
                       from: applied.from,
                       to: applied.to,

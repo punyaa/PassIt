@@ -14,8 +14,8 @@ from app.catalogue.price_suggestion import suggest_price
 from app.core.config import get_settings
 from app.core.db import DbSession
 from app.integrations.onemap import geocode_postal_code
-from app.media.service import attach_media, listing_photos
-from app.models import Availability, Booking, Review, User, inclusive_range
+from app.media.service import attach_media, listing_photos, require_owned_keys
+from app.models import Availability, Booking, Media, Review, User, inclusive_range
 from app.models import Listing as ListingRow
 from app.schemas import ApiModel, DateWindow
 
@@ -50,6 +50,7 @@ class Listing(ApiModel):
 
 
 class ListingDetail(Listing):
+    photo_keys: list[str] = []
     owner_display_name: str
     owner_rating: float | None = None
     owner_review_count: int = 0
@@ -83,6 +84,10 @@ class ListingCreate(ApiModel):
 class ListingUpdate(ApiModel):
     title: str | None = Field(default=None, min_length=3, max_length=120)
     description: str | None = Field(default=None, max_length=2000)
+    category: str | None = Field(default=None, min_length=2, max_length=60)
+    mrt_station: str | None = None
+    postal_code: str | None = Field(default=None, pattern=r"^\d{6}$")
+    photo_keys: list[str] | None = Field(default=None, max_length=10)
     condition: str | None = Field(default=None, min_length=2, max_length=30)
     price_day: Price | None = None
     price_week: Price | None = None
@@ -165,6 +170,8 @@ async def list_listings(
     category: str | None = None,
     mrt: str | None = None,
     planning_area: str | None = None,
+    owner_id: UUID | None = None,
+    sort: Literal["newest", "price_asc", "price_desc"] = "newest",
     min_price: Annotated[Decimal | None, Query(ge=0)] = None,
     max_price: Annotated[Decimal | None, Query(ge=0)] = None,
     from_date: Annotated[date | None, Query(alias="from")] = None,
@@ -174,6 +181,8 @@ async def list_listings(
 ) -> list[Listing]:
     """Search active listings. `from`/`to` keep only listings free for the whole range."""
     query = select(ListingRow).where(ListingRow.status == "active")
+    if owner_id:
+        query = query.where(ListingRow.owner_id == owner_id)
     if q:
         document = func.to_tsvector("english", ListingRow.title + " " + ListingRow.category)
         query = query.where(
@@ -197,7 +206,12 @@ async def list_listings(
         if end < start:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "`to` must not be before `from`")
         query = query.where(free_dates_clause(start, end))
-    query = query.order_by(ListingRow.created_at.desc(), ListingRow.id).limit(limit).offset(offset)
+    ordering = {
+        "newest": ListingRow.created_at.desc(),
+        "price_asc": ListingRow.price_day.asc(),
+        "price_desc": ListingRow.price_day.desc(),
+    }[sort]
+    query = query.order_by(ordering, ListingRow.id).limit(limit).offset(offset)
     return await _cards(db, list(await db.scalars(query)))
 
 
@@ -235,7 +249,7 @@ async def _require_listing_slot(db: AsyncSession, owner_id: UUID) -> None:
         )
 
 
-async def _locate(request: ListingCreate) -> tuple[float, float, str, str]:
+async def _locate(request: ListingCreate | ListingUpdate) -> tuple[float, float, str, str]:
     """Return (latitude, longitude, mrt_station, planning_area)."""
     if request.postal_code:
         geocoded = await geocode_postal_code(request.postal_code)
@@ -314,8 +328,14 @@ async def _detail(db: AsyncSession, listing: ListingRow) -> ListingDetail:
         )
     ).one()
     [card] = await _cards(db, [listing])
+    keys = await db.scalars(
+        select(Media.s3_key)
+        .where(Media.listing_id == listing.id, Media.stage == "listing")
+        .order_by(Media.position, Media.created_at, Media.id)
+    )
     return ListingDetail(
         **card.model_dump(),
+        photo_keys=list(keys),
         owner_display_name=owner.display_name,
         owner_rating=round(float(rating), 2) if rating is not None else None,
         owner_review_count=count,
@@ -330,11 +350,21 @@ async def get_listing(listing_id: UUID, db: DbSession) -> ListingDetail:
     return await _detail(db, listing)
 
 
+@router.get("/{listing_id}/manage", response_model=ListingDetail, operation_id="getManagedListing")
+async def get_managed_listing(listing_id: UUID, user: CurrentUser, db: DbSession) -> ListingDetail:
+    listing = await db.get(ListingRow, listing_id)
+    if listing is None or listing.owner_id != user.id:
+        raise HTTPException(404, "Listing not found")
+    return await _detail(db, listing)
+
+
 @router.patch("/{listing_id}", response_model=ListingDetail, operation_id="updateListing")
 async def update_listing(
     listing_id: UUID, request: ListingUpdate, user: CurrentUser, db: DbSession
 ) -> ListingDetail:
-    listing = await db.get(ListingRow, listing_id)
+    listing = await db.scalar(
+        select(ListingRow).where(ListingRow.id == listing_id).with_for_update()
+    )
     if listing is None or listing.owner_id != user.id:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Listing not found")
     changes = request.model_dump(exclude_unset=True)
@@ -351,9 +381,62 @@ async def update_listing(
                 status.HTTP_409_CONFLICT,
                 "This listing has confirmed or active bookings. Finish or cancel them first.",
             )
+    photo_keys = changes.pop("photo_keys", None)
+    if "photo_keys" in request.model_fields_set and photo_keys is None:
+        raise HTTPException(400, "photo_keys cannot be null; use an empty list to remove photos")
+    location_changed = "postal_code" in changes or "mrt_station" in changes
+    changes.pop("postal_code", None)
+    changes.pop("mrt_station", None)
+    if location_changed:
+        latitude, longitude, station, area = await _locate(request)
+        listing.latitude, listing.longitude = latitude, longitude
+        listing.mrt_station, listing.planning_area = station, area
+    if photo_keys is not None:
+        await _replace_photos(db, listing, photo_keys, user.id)
     for field, value in changes.items():
-        if value is None and field in {"title", "condition", "price_day", "deposit", "status"}:
+        if value is None and field in {
+            "title",
+            "category",
+            "condition",
+            "price_day",
+            "deposit",
+            "status",
+        }:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, f"{field} cannot be cleared")
         setattr(listing, field, value)
     await db.commit()
     return await _detail(db, listing)
+
+
+async def _replace_photos(
+    db: AsyncSession, listing: ListingRow, keys: list[str], user_id: UUID
+) -> None:
+    require_owned_keys(keys, "listing", user_id)
+    if len(keys) != len(set(keys)):
+        raise HTTPException(400, "Duplicate media keys")
+    existing = list(
+        await db.scalars(
+            select(Media).where(Media.listing_id == listing.id, Media.stage == "listing")
+        )
+    )
+    taken = list(await db.scalars(select(Media).where(Media.s3_key.in_(keys))))
+    if any(media.listing_id != listing.id or media.stage != "listing" for media in taken):
+        raise HTTPException(409, "Photo is already attached to another item")
+    by_key = {media.s3_key: media for media in existing}
+    for media in existing:
+        if media.s3_key not in keys:
+            await db.delete(media)
+    for position, key in enumerate(keys):
+        if key in by_key:
+            by_key[key].position = position
+        else:
+            db.add(
+                Media(
+                    listing_id=listing.id,
+                    uploaded_by=user_id,
+                    stage="listing",
+                    s3_key=key,
+                    position=position,
+                )
+            )
+    await db.flush()

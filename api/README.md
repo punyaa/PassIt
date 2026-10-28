@@ -74,7 +74,7 @@ Accounts use an email and password, stored as argon2id hashes (`app/auth/passwor
 | `POST /auth/signup` | Create an account (`email`, `password` of 8 to 128 characters, `display_name`) and start a session. `409` if the email is taken, ignoring case. |
 | `POST /auth/session` | Log in. The same `401` for a wrong password and an unknown email. |
 | `DELETE /auth/session` | Log out (clears the cookie). |
-| `GET /auth/me` | The signed-in user (`user_id`, `display_name`, `email`); `401` when signed out. |
+| `GET /auth/me` | The signed-in user (`user_id`, `display_name`, private `email`, `bio`, `avatar_url`); `401` when signed out. |
 
 A session is an HS256 JWT signed with `PASSIT_JWT_SECRET`, valid for 12 hours, delivered as the `passit_session` **httpOnly** cookie (`Secure` when `PASSIT_SESSION_COOKIE_SECURE=true`, which staging and demo set because CloudFront serves HTTPS). Domain routers only depend on `CurrentUser`, which also accepts `Authorization: Bearer <jwt>` for scripts and load tests. Outside `PASSIT_ENVIRONMENT=development` the API refuses to start with the default secret. Note the variable is `PASSIT_ENVIRONMENT`, not `PASSIT_ENV`.
 
@@ -102,3 +102,9 @@ Set `PASSIT_FEE_HOLD_MINUTES=1` in staging so demos show a real release instead 
 - **Bedrock:** not enabled. `PASSIT_BEDROCK_MODEL_ID` is unset, so price suggestions use the heuristic. The task role already allows `bedrock:InvokeModel`.
 - **OneMap:** not exercised from AWS. Set `PASSIT_ONEMAP_TOKEN` for planning-area lookups.
 - **Evidence URLs** are unsigned CloudFront URLs: anyone holding a media key can read the photo. See the TODO in `integrations/storage.py`.
+
+## Prototype enrichment
+
+Migration `0003` adds nullable profile bio/avatar fields, per-account saved listings and ordered listing photos. `PATCH /v1/auth/me` updates display name, bio and a user-owned avatar upload key; `GET /v1/users/{id}` exposes public identity and ratings without account email. Avatars use the existing upload API with stage `avatar` and JPEG/PNG files.
+
+`GET/PUT/DELETE /v1/saved-listings` (PUT/DELETE use `/{listing_id}`) manage private bookmarks. Search accepts `owner_id` and `sort=newest|price_asc|price_desc`. Owners load archived listings through `GET /v1/listings/{id}/manage`; public listing reads continue to exclude archived items. Listing PATCH supports category/location and ordered `photo_keys`; listing media edits leave booking evidence untouched.

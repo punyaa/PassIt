@@ -1,5 +1,6 @@
 "use client";
 
+import { ListingTile } from "./listing-tile";
 import { ListingCard } from "./listing-card";
 import { Alert, Button, EmptyState, Spinner } from "./ui";
 import type { Schemas } from "@/lib/api-client";
@@ -34,17 +35,21 @@ export function CatalogueGrid({
         </EmptyState>
       )}
       <div className="listing-grid">
-        {listings.data?.map((listing) => (
-          <ListingCard
-            key={listing.id}
-            listing={listing}
-            href={
-              manage
-                ? `/listings/${listing.id}/edit`
-                : `/listings/${listing.id}`
-            }
-          />
-        ))}
+        {listings.data?.map((listing) =>
+          manage ? (
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+              href={`/listings/${listing.id}/edit`}
+            />
+          ) : (
+            <ListingTile
+              key={listing.id}
+              listing={listing}
+              href={`/listings/${listing.id}`}
+            />
+          ),
+        )}
       </div>
     </>
   );

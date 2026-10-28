@@ -80,6 +80,8 @@ test("application routes remain directly accessible", async () => {
   for (const path of [
     "/home",
     "/profile",
+    "/profile/edit",
+    "/profile/saved",
     "/login",
     "/signup",
     "/search",

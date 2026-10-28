@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 
-import type { Schemas } from "@/lib/api-client";
-import { useApi } from "@/lib/use-api";
+import { useAccountData } from "./account-data";
 
 import { BookingRow } from "./booking-summary";
 import { Alert, Button, EmptyState, Spinner } from "./ui";
@@ -16,7 +15,7 @@ export function NeedsAction({
   role: "borrower" | "lender";
   compact: boolean;
 }) {
-  const bookings = useApi<Schemas["Booking"][]>(`/bookings?role=${role}`);
+  const { rentals: bookings } = useAccountData();
   if (bookings.loading) return <Spinner />;
   if (bookings.error)
     return (
@@ -28,8 +27,10 @@ export function NeedsAction({
       </Alert>
     );
   const pending =
-    bookings.data?.filter((b) =>
-      b.available_actions.some((a) => a !== "review" && a !== "cancel"),
+    bookings.data?.filter(
+      (b) =>
+        b.viewer_role === role &&
+        b.available_actions.some((a) => a !== "review" && a !== "cancel"),
     ) ?? [];
   return (
     <section className="space-y-3">
