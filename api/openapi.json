@@ -720,6 +720,14 @@
             "title": "Status",
             "type": "string"
           },
+          "thumbnail_urls": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Thumbnail Urls",
+            "type": "array"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -1003,6 +1011,14 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "thumbnail_urls": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Thumbnail Urls",
+            "type": "array"
           },
           "title": {
             "title": "Title",

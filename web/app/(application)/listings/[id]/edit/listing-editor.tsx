@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { ListingPhoto } from "@/components/listing-card";
 import { useSession } from "@/components/session";
@@ -73,7 +74,51 @@ export function ListingEditor({ id }: { id: string }) {
       </div>
       <DetailsForm listing={listing.data} onSave={listing.setData} />
       <AvailabilityEditor id={id} />
+      <DeleteListing id={id} />
     </>
+  );
+}
+
+function DeleteListing({ id }: { id: string }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function remove() {
+    if (
+      !window.confirm(
+        "Delete this listing? It will be removed from search and can't be booked. Existing booking history is kept.",
+      )
+    )
+      return;
+    setBusy(true);
+    setError(null);
+    try {
+      await apiRequest<Listing>(`/listings/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "archived" }),
+      });
+      router.push("/listings/manage");
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "Couldn't delete listing.",
+      );
+      setBusy(false);
+    }
+  }
+  return (
+    <section className="mt-6">
+      <Card className="space-y-4">
+        <h2 className="text-xl font-bold">Delete listing</h2>
+        <p className="text-sm leading-6 text-muted">
+          Removes the listing from search and frees up a listing slot. Listings
+          with confirmed or active bookings can't be deleted.
+        </p>
+        {error && <Alert>{error}</Alert>}
+        <Button busy={busy} type="button" variant="secondary" onClick={remove}>
+          Delete listing
+        </Button>
+      </Card>
+    </section>
   );
 }
 

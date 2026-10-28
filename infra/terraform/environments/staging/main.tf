@@ -10,6 +10,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.4"
+    }
   }
 
   # State bucket is created once by hand (see infra/README.md, "Bootstrap").
@@ -84,6 +88,10 @@ module "ecs_alb" {
       PASSIT_LLM_API_URL       = "https://soclaas-api.comp.nus.edu.sg/v1"
       PASSIT_LLM_MODEL         = "default"
     },
+    var.notification_sender == null ? {} : {
+      PASSIT_NOTIFICATIONS_BACKEND = "sns"
+      PASSIT_EVENTS_TOPIC_ARN      = one(module.notifications[*].topic_arn)
+    },
     var.release_image_tag == null ? {} : {
       PASSIT_SCHEDULER_BACKEND  = "eventbridge"
       PASSIT_RELEASE_LAMBDA_ARN = module.release_scheduler.lambda_arn
@@ -105,6 +113,10 @@ module "release_scheduler" {
   database_url      = module.rds.database_url
   jwt_secret        = module.ecs_alb.jwt_secret
   image_tag         = var.release_image_tag
+
+  # Its result, including the fee.released event, reaches the mailer through the events topic.
+  forward_results   = var.notification_sender != null
+  results_topic_arn = one(module.notifications[*].topic_arn)
 }
 
 module "monitoring" {
@@ -142,6 +154,46 @@ resource "aws_iam_role_policy" "task_media" {
   })
 }
 
+# Small JPEG thumbnails of listing photos, made when a photo is uploaded.
+module "thumbnailer" {
+  source = "../../modules/thumbnailer"
+
+  environment = "staging"
+  bucket_name = module.cdn.bucket_name
+  bucket_arn  = module.cdn.bucket_arn
+  image_tag   = var.thumbnailer_image_tag
+}
+
+# Emails for booking and release events. Off until a sender address is given.
+module "notifications" {
+  source = "../../modules/notifications"
+  count  = var.notification_sender == null ? 0 : 1
+
+  environment       = "staging"
+  aws_region        = var.aws_region
+  sender_address    = var.notification_sender
+  copy_to           = var.notification_copy_to
+  verify_recipients = var.notification_verify_recipients
+  site_url          = "https://${module.cdn.cloudfront_domain}"
+}
+
+# The API publishes booking events to the topic.
+resource "aws_iam_role_policy" "task_events" {
+  count = var.notification_sender == null ? 0 : 1
+
+  name = "publish-events"
+  role = module.ecs_alb.task_role_name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["sns:Publish"]
+      Resource = one(module.notifications[*].topic_arn)
+    }]
+  })
+}
+
 module "github_oidc" {
   source = "../../modules/github-oidc"
 
@@ -154,8 +206,12 @@ module "github_oidc" {
     module.ecs_alb.api_repository_arn,
     module.ecs_alb.web_repository_arn,
     module.release_scheduler.repository_arn,
+    module.thumbnailer.repository_arn,
   ]
-  lambda_function_arns = compact([module.release_scheduler.lambda_arn])
+  lambda_function_arns = compact([
+    module.release_scheduler.lambda_arn,
+    module.thumbnailer.function_arn,
+  ])
   task_role_arns = [
     module.ecs_alb.task_role_arn,
     module.ecs_alb.execution_role_arn,

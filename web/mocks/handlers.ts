@@ -20,6 +20,7 @@ const listing: Listing = {
   planning_area: "Clementi",
   status: "active",
   photo_urls: [],
+  thumbnail_urls: [],
 };
 
 const booking: Booking = {

@@ -14,7 +14,7 @@ from app.catalogue.price_suggestion import suggest_price
 from app.core.config import get_settings
 from app.core.db import DbSession
 from app.integrations.onemap import geocode_postal_code
-from app.media.service import attach_media, listing_photo_urls
+from app.media.service import attach_media, listing_photos
 from app.models import Availability, Booking, Review, User, inclusive_range
 from app.models import Listing as ListingRow
 from app.schemas import ApiModel, DateWindow
@@ -44,6 +44,9 @@ class Listing(ApiModel):
     planning_area: str | None = None
     status: ListingStatus
     photo_urls: list[str] = []
+    # Small versions of photo_urls, same order. Use them in lists and cards; a thumbnail can
+    # be missing for a moment after an upload, so fall back to the matching photo_urls entry.
+    thumbnail_urls: list[str] = []
 
 
 class ListingDetail(Listing):
@@ -112,7 +115,7 @@ class MrtStation(ApiModel):
     planning_area: str
 
 
-def _to_card(listing: ListingRow, photos: list[str]) -> Listing:
+def _to_card(listing: ListingRow, photos: list[str], thumbnails: list[str]) -> Listing:
     return Listing(
         id=listing.id,
         owner_id=listing.owner_id,
@@ -128,12 +131,16 @@ def _to_card(listing: ListingRow, photos: list[str]) -> Listing:
         planning_area=listing.planning_area,
         status=listing.status,
         photo_urls=photos,
+        thumbnail_urls=thumbnails,
     )
 
 
 async def _cards(db: AsyncSession, listings: list[ListingRow]) -> list[Listing]:
-    photos = await listing_photo_urls(db, [listing.id for listing in listings])
-    return [_to_card(listing, photos.get(listing.id, [])) for listing in listings]
+    photos, thumbnails = await listing_photos(db, [listing.id for listing in listings])
+    return [
+        _to_card(listing, photos.get(listing.id, []), thumbnails.get(listing.id, []))
+        for listing in listings
+    ]
 
 
 def free_dates_clause(start: date, end: date):  # noqa: ANN201 - SQLAlchemy expression
@@ -333,6 +340,17 @@ async def update_listing(
     changes = request.model_dump(exclude_unset=True)
     if listing.status == "archived" and changes.get("status") in ("active", "paused"):
         await _require_listing_slot(db, user.id)
+    if changes.get("status") == "archived" and listing.status != "archived":
+        in_progress = await db.scalar(
+            select(
+                exists().where(Booking.listing_id == listing.id, Booking.state.in_(BLOCKING_STATES))
+            )
+        )
+        if in_progress:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT,
+                "This listing has confirmed or active bookings. Finish or cancel them first.",
+            )
     for field, value in changes.items():
         if value is None and field in {"title", "condition", "price_day", "deposit", "status"}:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, f"{field} cannot be cleared")
