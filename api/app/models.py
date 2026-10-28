@@ -8,7 +8,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, SmallInteger, Text, text
+from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, SmallInteger, Text, text
 from sqlalchemy.dialects.postgresql import DATERANGE, ENUM, JSONB, Range
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -53,6 +53,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(Text)
     password_hash: Mapped[str] = mapped_column(Text)
     display_name: Mapped[str] = mapped_column(Text)
+    bio: Mapped[str | None] = mapped_column(Text)
+    avatar_key: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(server_default=NOW)
 
 
@@ -89,6 +91,7 @@ class Media(Base):
     uploaded_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
     stage: Mapped[str] = mapped_column(media_stage)
     s3_key: Mapped[str] = mapped_column(Text)
+    position: Mapped[int] = mapped_column(Integer, server_default=text("0"))
     created_at: Mapped[datetime] = mapped_column(server_default=NOW)
 
 
@@ -166,6 +169,14 @@ class LedgerEntry(Base):
     account: Mapped[str] = mapped_column(Text)
     entry_type: Mapped[str] = mapped_column(ledger_type)
     amount: Mapped[Decimal] = mapped_column(Money)
+    created_at: Mapped[datetime] = mapped_column(server_default=NOW)
+
+
+class SavedListing(Base):
+    __tablename__ = "saved_listings"
+
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    listing_id: Mapped[UUID] = mapped_column(ForeignKey("listings.id"), primary_key=True)
     created_at: Mapped[datetime] = mapped_column(server_default=NOW)
 
 
