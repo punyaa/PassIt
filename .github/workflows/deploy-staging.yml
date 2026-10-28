@@ -30,6 +30,8 @@ env:
   WEB_REPO: passit-staging-web
   RELEASE_REPO: passit-staging-release
   RELEASE_FUNCTION: passit-staging-release
+  THUMBNAIL_REPO: passit-staging-thumbnailer
+  THUMBNAIL_FUNCTION: passit-staging-thumbnailer
 
 jobs:
   deploy:
@@ -72,6 +74,18 @@ jobs:
           # The fee-release Lambda runs the same app code, so it ships with every deploy.
           # --provenance=false: Lambda cannot read the multi-platform manifest buildx adds.
           push "$RELEASE_REPO" api -f api/Dockerfile.lambda --provenance=false
+          # The photo thumbnailer. Skipped where its registry does not exist yet. Any other error
+          # (a permission problem, say) must fail the deploy, not quietly skip the thumbnailer.
+          if check=$(aws ecr describe-images --repository-name "$THUMBNAIL_REPO" --max-items 1 2>&1); then
+            push "$THUMBNAIL_REPO" infra/lambdas/thumbnailer --provenance=false
+            # Tell the update step an image exists for this commit.
+            echo "THUMBNAIL_IMAGE_PUSHED=true" >> "$GITHUB_ENV"
+          elif grep -q RepositoryNotFoundException <<<"$check"; then
+            echo "No $THUMBNAIL_REPO registry in this environment, skipping the thumbnailer"
+          else
+            echo "$check" >&2
+            exit 1
+          fi
 
       - name: Register task definitions with the new image
         env:
@@ -126,6 +140,22 @@ jobs:
           aws lambda update-function-code --function-name "$RELEASE_FUNCTION" \
             --image-uri "$REGISTRY/$RELEASE_REPO:$TAG" --query LastUpdateStatus --output text
           aws lambda wait function-updated --function-name "$RELEASE_FUNCTION"
+
+      - name: Update the thumbnailer Lambda
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          # Needs both an image pushed by this run and the function itself, which exists once
+          # Terraform has been given a thumbnailer image tag. Either can be missing while an
+          # environment is being set up, and neither should fail a deploy.
+          if [ "${THUMBNAIL_IMAGE_PUSHED:-}" = "true" ] \
+              && aws lambda get-function --function-name "$THUMBNAIL_FUNCTION" >/dev/null 2>&1; then
+            aws lambda update-function-code --function-name "$THUMBNAIL_FUNCTION" \
+              --image-uri "$REGISTRY/$THUMBNAIL_REPO:$TAG" --query LastUpdateStatus --output text
+            aws lambda wait function-updated --function-name "$THUMBNAIL_FUNCTION"
+          else
+            echo "No thumbnailer image or function in this environment, skipping"
+          fi
 
       - name: Smoke test
         run: |

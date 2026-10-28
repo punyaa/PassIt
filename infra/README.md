@@ -17,6 +17,8 @@ Both target `ap-southeast-1`. Do not create production resources for the four-we
 | `rds` | PostgreSQL 16, single-AZ, private. Writes the connection string to SSM. |
 | `ecs-alb` | ECR, Fargate (ARM64) API and web services, ALB, JWT secret, autoscaling (2 to 6), one-off migration task. |
 | `s3-cloudfront` | Private media bucket and the CloudFront distribution that fronts the whole site. |
+| `thumbnailer` | ECR repository, role, and the Lambda (container image) that S3 calls for each new listing photo, plus the bucket notification that triggers it |
+| `notifications` | SNS events topic, the mailer Lambda (zipped by Terraform), SES email identities, the permissions between them |
 | `release-scheduler` | EventBridge schedule group, fee-release Lambda (container image), roles. |
 | `monitoring` | Alarms, dashboard, USD 35 monthly budget, alert topic. |
 | `github-oidc` | Deploy role GitHub Actions assumes through OIDC. No stored AWS keys. |
@@ -53,9 +55,11 @@ docker build --platform linux/arm64 -t $REG/passit-<env>-api:<TAG> api && docker
 docker build --platform linux/arm64 --build-arg NEXT_PUBLIC_API_URL=/v1 -t $REG/passit-<env>-web:<TAG> web && docker push $REG/passit-<env>-web:<TAG>
 docker build --platform linux/arm64 --provenance=false -f api/Dockerfile.lambda -t $REG/passit-<env>-release:<TAG> api && docker push $REG/passit-<env>-release:<TAG>
 
-# 3. Everything else, including the release Lambda.
+# 3. Everything else, including the release Lambda. Add the thumbnailer image the same way:
+#    docker build --platform linux/arm64 --provenance=false -t $REG/passit-<env>-thumbnailer:<TAG> infra/lambdas/thumbnailer
 terraform apply -var api_image_tag=<TAG> -var web_image_tag=<TAG> -var release_image_tag=<TAG> \
-  -var 'alert_emails=["you@u.nus.edu"]'
+  -var thumbnailer_image_tag=<TAG> -var 'alert_emails=["you@u.nus.edu"]' \
+  -var notification_sender=you@u.nus.edu -var 'notification_copy_to=["you@u.nus.edu"]'
 
 # 4. Migrate and seed (also the demo reset).
 AWS_PROFILE=<profile> scripts/demo-reset/reset.sh <env>
@@ -74,3 +78,14 @@ Building `demo` in the same account as `staging`: leave `create_github_oidc_prov
 - Cost allocation tags cannot be activated from a linked account; the organisation's management account must do it.
 - Media is served through CloudFront without signed URLs, so evidence photos are reachable by anyone holding the (unguessable) key. See the TODO in `api/app/integrations/storage.py`.
 - Single-AZ database, no NAT Gateway, HTTP between CloudFront and the ALB: acceptable for the prototype, not for production.
+
+## Photo thumbnails and email events
+
+Both are built on events, so neither adds work to a request.
+
+- **Thumbnails.** Uploading a listing photo makes S3 call the `thumbnailer` Lambda, which writes a small JPEG under `thumbs/` in the same bucket. CloudFront serves `/thumbs/*` like `/media/*`. Set `thumbnailer_image_tag` once the first image is pushed; after that CI updates the function on every deploy. To thumbnail photos uploaded earlier, run `scripts/thumbnails/backfill.sh <env>`.
+- **Email events.** The API publishes a JSON event to the `passit-<env>-events` SNS topic after each booking step, and the `mailer` Lambda turns it into emails through SES. The fee-release Lambda cannot reach SNS from inside the VPC, so Lambda forwards its result to the same topic (a success destination) and the mailer picks the event out of it.
+- **The on/off switch.** `notifications_enabled` (default `false`) controls the whole feature. Off: the API publishes nothing, the release Lambda forwards nothing, and the mailer ignores anything that arrives (it sends only when its `SEND_EMAILS` setting is exactly `true`). The topic, mailer and SES identity stay deployed, so turning it on is a one-line change: `terraform apply -var notifications_enabled=true`. It also needs `notification_sender`.
+- **The sender address matters.** Receivers check that a message really comes from the domain in its From line. A university address such as `u.nus.edu` publishes `p=reject` and only authorises its own mail servers, so mail sent "from" it through SES is refused (SES forwards the bounce notice to that inbox). Use an address on a domain you own, verified in SES with DKIM; a free-mail address is no better. Until you have one, leave `notifications_enabled` off.
+- **SES sandbox.** A new SES account can only send to verified addresses. Terraform creates an identity for the sender, for `notification_copy_to` (a Bcc of every email) and for `notification_verify_recipients`; AWS emails each a link that must be clicked once. Seed and example addresses (`passit.demo`, `example.com`) are never emailed. To email anyone, request SES production access from AWS.
+- **Keeping your addresses out of git.** Put personal values in `environments/<env>/terraform.auto.tfvars`, which is gitignored and read automatically.

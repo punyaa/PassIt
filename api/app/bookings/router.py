@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, status
 from pydantic import Field
 from sqlalchemy import exists, or_, select
 from sqlalchemy.exc import IntegrityError, OperationalError
@@ -16,11 +16,13 @@ from app.bookings.pricing import price_for, rental_days
 from app.bookings.state_machine import Role, available_actions, require_action
 from app.core.config import get_settings
 from app.core.db import DbSession
+from app.integrations.notifications import publish_event
 from app.integrations.scheduler import get_scheduler
 from app.integrations.storage import get_storage
 from app.media.service import attach_media
 from app.models import Availability, Checklist, Listing, Media, Review, User, inclusive_range
 from app.models import Booking as BookingRow
+from app.notifications.events import Actor, EventType, build_booking_event
 from app.schemas import ApiModel
 from app.transactions import service as ledger_service
 
@@ -147,6 +149,24 @@ async def _to_response(
     )
 
 
+async def _announce(
+    background: BackgroundTasks,
+    db: AsyncSession,
+    event_type: EventType,
+    booking: BookingRow,
+    listing: Listing,
+    actor: Actor,
+) -> None:
+    """Queue an event to go out once the response is sent. The change already committed, so
+    a failure to describe or publish it is logged and never fails the request."""
+    try:
+        background.add_task(
+            publish_event, await build_booking_event(db, event_type, booking, listing, actor)
+        )
+    except Exception:
+        logger.exception("could not build %s for %s", event_type, booking.id)
+
+
 async def _within_availability(db: AsyncSession, listing_id: UUID, start: date, end: date) -> bool:
     return bool(
         await db.scalar(
@@ -190,7 +210,9 @@ async def _record_checklist(
     operation_id="createBooking",
     responses={409: {"description": "Dates already booked or outside availability"}},
 )
-async def create_booking(request: BookingCreate, user: CurrentUser, db: DbSession) -> Booking:
+async def create_booking(
+    request: BookingCreate, user: CurrentUser, db: DbSession, background: BackgroundTasks
+) -> Booking:
     """Book dates instantly. The exclusion constraint `no_overlap` is the only guard against
     double-booking: there is no check-then-insert, so concurrent requests for the same dates
     produce exactly one 201 and 409 for the rest."""
@@ -243,6 +265,7 @@ async def create_booking(request: BookingCreate, user: CurrentUser, db: DbSessio
             ) from error
         raise
     await db.refresh(booking)
+    await _announce(background, db, "booking.confirmed", booking, listing, "borrower")
     return await _to_response(db, booking, listing, user.id)
 
 
@@ -274,7 +297,11 @@ async def get_booking(booking_id: UUID, user: CurrentUser, db: DbSession) -> Boo
 
 @router.post("/{booking_id}/handover", response_model=Booking, operation_id="handoverBooking")
 async def handover_booking(
-    booking_id: UUID, submission: ChecklistSubmission, user: CurrentUser, db: DbSession
+    booking_id: UUID,
+    submission: ChecklistSubmission,
+    user: CurrentUser,
+    db: DbSession,
+    background: BackgroundTasks,
 ) -> Booking:
     """Record the handover checklist and condition photos, and start the fee hold timer."""
     booking, listing, role = await _load_for_party(db, booking_id, user.id, lock=True)
@@ -292,12 +319,17 @@ async def handover_booking(
         )
     except Exception:  # the release sweep is the safety net
         logger.exception("could not schedule fee release for %s", booking.id)
+    await _announce(background, db, "booking.handed_over", booking, listing, role)
     return await _to_response(db, booking, listing, user.id)
 
 
 @router.post("/{booking_id}/return", response_model=Booking, operation_id="returnBooking")
 async def return_booking(
-    booking_id: UUID, submission: ChecklistSubmission, user: CurrentUser, db: DbSession
+    booking_id: UUID,
+    submission: ChecklistSubmission,
+    user: CurrentUser,
+    db: DbSession,
+    background: BackgroundTasks,
 ) -> Booking:
     """Record the return checklist and photos. The lender then settles the deposit."""
     booking, listing, role = await _load_for_party(db, booking_id, user.id, lock=True)
@@ -306,11 +338,14 @@ async def return_booking(
     booking.state = "returned"
     booking.returned_at = datetime.now(UTC)
     await db.commit()
+    await _announce(background, db, "booking.returned", booking, listing, role)
     return await _to_response(db, booking, listing, user.id)
 
 
 @router.post("/{booking_id}/cancel", response_model=Booking, operation_id="cancelBooking")
-async def cancel_booking(booking_id: UUID, user: CurrentUser, db: DbSession) -> Booking:
+async def cancel_booking(
+    booking_id: UUID, user: CurrentUser, db: DbSession, background: BackgroundTasks
+) -> Booking:
     """Cancel before handover. Both holds are refunded and the dates are freed."""
     booking, listing, role = await _load_for_party(db, booking_id, user.id, lock=True)
     require_action("cancel", booking.state, role)
@@ -318,11 +353,18 @@ async def cancel_booking(booking_id: UUID, user: CurrentUser, db: DbSession) -> 
     booking.state = "cancelled"
     booking.cancelled_at = datetime.now(UTC)
     await db.commit()
+    await _announce(background, db, "booking.cancelled", booking, listing, role)
     return await _to_response(db, booking, listing, user.id)
 
 
 async def _settle(
-    db: AsyncSession, booking_id: UUID, user: User, action: str, severity: str, notes: str | None
+    db: AsyncSession,
+    background: BackgroundTasks,
+    booking_id: UUID,
+    user: User,
+    action: str,
+    severity: str,
+    notes: str | None,
 ) -> Booking:
     booking, listing, role = await _load_for_party(db, booking_id, user.id, lock=True)
     require_action(action, booking.state, role)
@@ -332,18 +374,25 @@ async def _settle(
     booking.state = "settled"
     booking.settled_at = datetime.now(UTC)
     await db.commit()
+    await _announce(background, db, "booking.settled", booking, listing, role)
     return await _to_response(db, booking, listing, user.id)
 
 
 @router.post("/{booking_id}/settle", response_model=Booking, operation_id="settleBooking")
-async def settle_booking(booking_id: UUID, user: CurrentUser, db: DbSession) -> Booking:
+async def settle_booking(
+    booking_id: UUID, user: CurrentUser, db: DbSession, background: BackgroundTasks
+) -> Booking:
     """Lender confirms the item came back fine: the full deposit is refunded."""
-    return await _settle(db, booking_id, user, "settle", "none", None)
+    return await _settle(db, background, booking_id, user, "settle", "none", None)
 
 
 @router.post("/{booking_id}/damage", response_model=Booking, operation_id="reportBookingDamage")
 async def report_booking_damage(
-    booking_id: UUID, submission: DamageSubmission, user: CurrentUser, db: DbSession
+    booking_id: UUID,
+    submission: DamageSubmission,
+    user: CurrentUser,
+    db: DbSession,
+    background: BackgroundTasks,
 ) -> Booking:
     """Lender reports damage after comparing handover and return evidence. The deposit is
     split by fixed tier: minor 20%, moderate 40%, severe 70%, total 100% to the lender.
@@ -351,7 +400,7 @@ async def report_booking_damage(
     Prototype simplification: the plan has an admin choose the tier; with no admin role
     yet, the lender's tier is applied directly."""
     return await _settle(
-        db, booking_id, user, "report_damage", submission.severity, submission.notes
+        db, background, booking_id, user, "report_damage", submission.severity, submission.notes
     )
 
 

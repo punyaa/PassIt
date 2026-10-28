@@ -72,6 +72,8 @@ async def test_saved_items_are_private_idempotent_and_removable_when_archived(cl
 
 
 async def test_photo_editing_preserves_rental_evidence_and_archive_is_reversible(client, make_user):
+    from app.integrations.storage import get_storage
+
     owner, borrower = make_user("Owner"), make_user("Borrower")
     keys = [await upload(client, owner, "listing") for _ in range(3)]
     item = await create_listing(client, owner, photo_keys=keys[:2])
@@ -81,6 +83,13 @@ async def test_photo_editing_preserves_rental_evidence_and_archive_is_reversible
     evidence_before = (
         await client.get(f"/bookings/{booking['id']}/checklists", headers=borrower.headers)
     ).json()
+    blocked = await client.patch(
+        f"/listings/{item['id']}",
+        headers=owner.headers,
+        json={"photo_keys": [keys[2]], "status": "archived"},
+    )
+    assert blocked.status_code == 409
+    assert (await client.get(f"/listings/{item['id']}")).json()["photo_keys"] == keys[:2]
     edited = await client.patch(
         f"/listings/{item['id']}",
         headers=owner.headers,
@@ -88,15 +97,22 @@ async def test_photo_editing_preserves_rental_evidence_and_archive_is_reversible
             "category": "Travel",
             "mrt_station": "Bugis",
             "photo_keys": [keys[1], keys[2]],
-            "status": "archived",
         },
     )
     assert edited.status_code == 200, edited.text
     assert edited.json()["photo_keys"] == [keys[1], keys[2]]
     assert edited.json()["mrt_station"] == "Bugis"
+    assert edited.json()["thumbnail_urls"] == [
+        get_storage().thumbnail_url(key) for key in [keys[1], keys[2]]
+    ]
     assert (
         await client.get(f"/bookings/{booking['id']}/checklists", headers=borrower.headers)
     ).json() == evidence_before
+    assert (await checklist(client, borrower, booking["id"], "return")).status_code == 200
+    archived = await client.patch(
+        f"/listings/{item['id']}", headers=owner.headers, json={"status": "archived"}
+    )
+    assert archived.status_code == 200, archived.text
     assert (await client.get(f"/listings/{item['id']}")).status_code == 404
     assert (
         await client.get(f"/listings/{item['id']}/manage", headers=borrower.headers)
@@ -111,7 +127,7 @@ async def test_photo_editing_preserves_rental_evidence_and_archive_is_reversible
     ).status_code == 200
     assert (await client.get(f"/bookings/{booking['id']}", headers=borrower.headers)).json()[
         "state"
-    ] == "handed_over"
+    ] == "returned"
 
 
 async def test_media_cannot_be_stolen_or_reused_across_listings(client, make_user):

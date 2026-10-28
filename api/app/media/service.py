@@ -69,9 +69,12 @@ async def attach_media(
     return rows
 
 
-async def listing_photo_urls(db: AsyncSession, listing_ids: list[UUID]) -> dict[UUID, list[str]]:
+async def listing_photos(
+    db: AsyncSession, listing_ids: list[UUID]
+) -> tuple[dict[UUID, list[str]], dict[UUID, list[str]]]:
+    """Photo URLs and their thumbnail URLs per listing, in upload order (same index)."""
     if not listing_ids:
-        return {}
+        return {}, {}
     rows = await db.scalars(
         select(Media)
         .where(Media.listing_id.in_(listing_ids), Media.stage == "listing")
@@ -79,6 +82,12 @@ async def listing_photo_urls(db: AsyncSession, listing_ids: list[UUID]) -> dict[
     )
     storage = get_storage()
     urls: dict[UUID, list[str]] = defaultdict(list)
+    thumbnails: dict[UUID, list[str]] = defaultdict(list)
     for media in rows:
         urls[media.listing_id].append(storage.view_url(media.s3_key))
-    return urls
+        thumbnails[media.listing_id].append(storage.thumbnail_url(media.s3_key))
+    return urls, thumbnails
+
+
+async def listing_photo_urls(db: AsyncSession, listing_ids: list[UUID]) -> dict[UUID, list[str]]:
+    return (await listing_photos(db, listing_ids))[0]

@@ -82,6 +82,23 @@ async def test_free_listing_limit_is_three(client, make_user):
     await create_listing(client, lender, title="Item 4")
 
 
+async def test_archive_blocked_by_confirmed_booking(client, make_user):
+    lender, borrower = make_user("Lena"), make_user("Ben")
+    listing = await create_listing(client, lender)
+    booking = (await book(client, borrower, listing["id"])).json()
+    blocked = await client.patch(
+        f"/listings/{listing['id']}", json={"status": "archived"}, headers=lender.headers
+    )
+    assert blocked.status_code == 409
+    cancelled = await client.post(f"/bookings/{booking['id']}/cancel", headers=lender.headers)
+    assert cancelled.status_code == 200, cancelled.text
+    archived = await client.patch(
+        f"/listings/{listing['id']}", json={"status": "archived"}, headers=lender.headers
+    )
+    assert archived.status_code == 200
+    assert (await client.get(f"/listings/{listing['id']}")).status_code == 404
+
+
 async def test_listing_validation_and_ownership(client, make_user):
     lender, other = make_user("Lena"), make_user("Otto")
     no_location = await client.post(

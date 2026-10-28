@@ -26,6 +26,18 @@ from app.core.config import Settings, get_settings
 EXTENSIONS = {"image/jpeg": ".jpg", "image/png": ".png", "video/mp4": ".mp4"}
 
 
+def thumbnail_key(key: str, *, media_prefix: str, thumbnail_prefix: str) -> str:
+    """Where the thumbnailer Lambda writes the thumbnail of a photo.
+
+    `media/listing/<user>/<id>.png` becomes `thumbs/listing/<user>/<id>.jpg`. The Lambda in
+    infra/lambdas/thumbnailer applies the same rule; a test keeps the two in step.
+    """
+    relative = key.removeprefix(media_prefix)
+    head, _, name = relative.rpartition("/")
+    stem = name.rpartition(".")[0] or name
+    return f"{thumbnail_prefix}{head + '/' if head else ''}{stem}.jpg"
+
+
 @dataclass(frozen=True)
 class PresignedUpload:
     upload_url: str
@@ -37,6 +49,8 @@ class MediaStorage(Protocol):
     def presign_upload(self, key: str, content_type: str) -> PresignedUpload: ...
 
     def view_url(self, key: str) -> str: ...
+
+    def thumbnail_url(self, key: str) -> str: ...
 
 
 class LocalStorage:
@@ -60,6 +74,9 @@ class LocalStorage:
 
     def view_url(self, key: str) -> str:
         return f"{self.settings.public_api_url}/v1/media/local/{key}"
+
+    def thumbnail_url(self, key: str) -> str:
+        return self.view_url(key)  # no thumbnailer locally: the card shows the original
 
 
 class S3Storage:
@@ -101,6 +118,22 @@ class S3Storage:
         return self.client.generate_presigned_url(
             "get_object",
             Params={"Bucket": self.settings.s3_bucket, "Key": key},
+            ExpiresIn=self.settings.media_signed_url_ttl_seconds,
+        )
+
+    def thumbnail_url(self, key: str) -> str:
+        """Address of the thumbnail. It appears a second or two after the upload, so the
+        frontend falls back to the original photo until then."""
+        thumb = thumbnail_key(
+            key,
+            media_prefix=self.settings.s3_prefix,
+            thumbnail_prefix=self.settings.thumbnail_prefix,
+        )
+        if self.settings.cloudfront_domain:
+            return f"https://{self.settings.cloudfront_domain}/{thumb}"
+        return self.client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": self.settings.s3_bucket, "Key": thumb},
             ExpiresIn=self.settings.media_signed_url_ttl_seconds,
         )
 

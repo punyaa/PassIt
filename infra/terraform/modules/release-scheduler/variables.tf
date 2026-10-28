@@ -33,3 +33,15 @@ variable "jwt_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "forward_results" {
+  description = "Send each successful result to results_topic_arn. A plain flag so the choice is known at plan time."
+  type        = bool
+  default     = false
+}
+
+variable "results_topic_arn" {
+  description = "SNS topic that receives the function's successful results. Used only when forward_results is true."
+  type        = string
+  default     = null
+}

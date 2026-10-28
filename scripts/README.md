@@ -42,3 +42,7 @@ Pilot numbers from 2026-10-24 (2 API tasks, 0.25 vCPU each, through CloudFront):
 | Cost | Cost Explorer returned USD 0.00 for the last 7 days (billing data lags, and the account is linked), so cost per rental is still to be measured |
 
 These are pilot-scale numbers, not the report figures. Rerun with `full` after feature freeze.
+
+## Thumbnails
+
+`thumbnails/backfill.sh <staging|demo>` thumbnails listing photos uploaded before the thumbnailer existed, by invoking it once per photo. New uploads need nothing.

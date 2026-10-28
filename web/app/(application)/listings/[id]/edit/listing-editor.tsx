@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { ConfirmAction } from "@/components/confirm-action";
 import { AvailabilityCalendar } from "@/components/availability-calendar";
 import { ListingPhotosEditor } from "@/components/listing-photos-editor";
 import { ListingPhoto } from "@/components/listing-card";
@@ -77,7 +79,39 @@ export function ListingEditor({ id }: { id: string }) {
       <DetailsForm listing={listing.data} onSave={listing.setData} />
       <ListingPhotosEditor listing={listing.data} onSave={listing.setData} />
       <AvailabilityEditor id={id} />
+      {listing.data.status !== "archived" && <DeleteListing id={id} />}
     </>
+  );
+}
+
+function DeleteListing({ id }: { id: string }) {
+  const router = useRouter();
+  async function remove() {
+    await apiRequest<Listing>(`/listings/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status: "archived" }),
+    });
+    router.push("/listings/manage");
+  }
+  return (
+    <section className="mt-6">
+      <Card className="space-y-4">
+        <h2 className="text-xl font-bold">Delete listing</h2>
+        <p className="text-sm leading-6 text-muted">
+          Removes the listing from search and frees up a listing slot. Listings
+          with confirmed or active bookings can't be deleted.
+        </p>
+        <ConfirmAction
+          title="Delete this listing?"
+          description="The listing will be archived and removed from search. Existing booking history is kept. You can restore it from My listings."
+          trigger="Delete listing"
+          confirmLabel="Delete listing"
+          variant="danger"
+          onConfirm={remove}
+          disabled={false}
+        />
+      </Card>
+    </section>
   );
 }
 

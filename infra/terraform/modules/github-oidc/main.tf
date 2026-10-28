@@ -21,6 +21,11 @@ data "aws_iam_openid_connect_provider" "github" {
 }
 
 locals {
+  # GitHub now issues an immutable subject, repo:<owner>@<owner id>/<repo>@<repo id>, for
+  # repositories created after it was introduced. It survives renames and cannot be claimed by
+  # someone who recreates a deleted repository's name, so it is the safer thing to trust.
+  subject_prefix = coalesce(var.subject_prefix, "repo:${var.github_repository}")
+
   provider_arn = var.create_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : data.aws_iam_openid_connect_provider.github[0].arn
 }
 
@@ -42,7 +47,7 @@ data "aws_iam_policy_document" "assume" {
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repository}:ref:refs/heads/${var.branch}"]
+      values   = ["${local.subject_prefix}:ref:refs/heads/${var.branch}"]
     }
   }
 }

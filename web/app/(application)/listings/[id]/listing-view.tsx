@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 
 import { SaveListingButton } from "@/components/listing-tile";
 import { ListingPhoto } from "@/components/listing-card";
+import { PhotoImage } from "@/components/photo-image";
 import { useSession } from "@/components/session";
 import { Alert, Badge, Button, Card, Spinner } from "@/components/ui";
 import { apiRequest, type Schemas } from "@/lib/api-client";
@@ -146,6 +147,7 @@ function Gallery({ listing }: { listing: Schemas["ListingDetail"] }) {
       <div className="mt-4 overflow-hidden rounded-card">
         <ListingPhoto
           className="aspect-[4/3] sm:aspect-[3/2]"
+          full
           listing={listing}
         />
       </div>
@@ -167,7 +169,12 @@ function Gallery({ listing }: { listing: Schemas["ListingDetail"] }) {
             onClick={() => setIndex(i)}
             type="button"
           >
-            <img alt="" className="size-full object-cover" src={url} />
+            <PhotoImage
+              alt=""
+              className="size-full object-cover"
+              fallbackSrc={url}
+              src={listing.thumbnail_urls?.[i] ?? url}
+            />
           </button>
         ))}
       </div>

@@ -61,6 +61,15 @@ class Settings(BaseSettings):
     scheduler_role_arn: str | None = None
     scheduler_group_name: str = "default"
 
+    # Photo thumbnails: a Lambda writes <thumbnail_prefix><stage>/<user>/<id>.jpg for every
+    # listing photo (infra/lambdas/thumbnailer). Without it the card falls back to the original.
+    thumbnail_prefix: str = "thumbs/"
+
+    # Booking and release events. "log" only writes a log line; "sns" publishes each event to
+    # events_topic_arn, where a Lambda turns it into emails (infra/lambdas/mailer).
+    notifications_backend: Literal["log", "sns"] = "log"
+    events_topic_arn: str | None = None
+
     # Business rules.
     fee_hold_minutes: int = 7 * 24 * 60  # set to 1 in staging so releases fire during demos
     local_release_sweep_seconds: int = 30  # 0 disables the in-process sweep
