@@ -12,7 +12,9 @@ The event format is documented in api/app/notifications/events.py. Each event go
 people it concerns, borrower and lender, and every email is also copied (Bcc) to COPY_TO.
 
 Settings, from environment variables set by Terraform:
-  SENDER        the verified SES address emails come from (required)
+  SEND_EMAILS   "true" to send. Anything else, or unset, switches the feature off: events are
+                received and ignored, and nothing is sent. This is the on/off switch.
+  SENDER        the verified SES address emails come from (required when sending)
   COPY_TO       comma-separated addresses that receive a copy of every email
   SITE_URL      the site's address, used for the link in each email
   SKIP_DOMAINS  recipient domains never emailed: the seed accounts, tests and examples
@@ -32,6 +34,7 @@ from typing import Any
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+ENABLED = os.environ.get("SEND_EMAILS", "").strip().lower() == "true"
 SENDER = os.environ.get("SENDER", "")
 COPY_TO = [a.strip() for a in os.environ.get("COPY_TO", "").split(",") if a.strip()]
 SITE_URL = os.environ.get("SITE_URL", "").rstrip("/")
@@ -257,6 +260,9 @@ def send(mail: Mail) -> bool:
 
 
 def handler(event: dict[str, Any], context: Any = None) -> dict[str, int]:
+    if not ENABLED:
+        logger.info("emails are switched off (SEND_EMAILS is not true), ignoring the event")
+        return {"sent": 0, "not_sent": 0}
     sent = failed = 0
     for item in extract_events(event):
         for mail in render(item):
