@@ -1,6 +1,6 @@
 # Private media bucket plus one CloudFront distribution that fronts the whole site:
 #   /v1/*, /health, /docs, /openapi.json -> ALB (API, never cached)
-#   /media/*                              -> S3 through origin access control
+#   /media/*, /thumbs/*                   -> S3 through origin access control
 #   everything else                       -> ALB (Next.js web app)
 # Uploads bypass CloudFront: the browser PUTs to S3 with a presigned URL.
 
@@ -162,15 +162,20 @@ resource "aws_cloudfront_distribution" "site" {
     }
   }
 
-  ordered_cache_behavior {
-    path_pattern             = "/media/*"
-    target_origin_id         = local.s3_origin
-    viewer_protocol_policy   = "redirect-to-https"
-    allowed_methods          = ["GET", "HEAD", "OPTIONS"]
-    cached_methods           = ["GET", "HEAD"]
-    cache_policy_id          = local.caching_optimized
-    origin_request_policy_id = local.cors_s3_origin_requests
-    compress                 = true
+  # Photos and their thumbnails (written by the thumbnailer Lambda) live in the same bucket.
+  dynamic "ordered_cache_behavior" {
+    for_each = ["/media/*", "/thumbs/*"]
+
+    content {
+      path_pattern             = ordered_cache_behavior.value
+      target_origin_id         = local.s3_origin
+      viewer_protocol_policy   = "redirect-to-https"
+      allowed_methods          = ["GET", "HEAD", "OPTIONS"]
+      cached_methods           = ["GET", "HEAD"]
+      cache_policy_id          = local.caching_optimized
+      origin_request_policy_id = local.cors_s3_origin_requests
+      compress                 = true
+    }
   }
 
   restrictions {

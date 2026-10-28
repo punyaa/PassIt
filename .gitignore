@@ -43,3 +43,7 @@ output/
 
 # Local media uploads (PASSIT_STORAGE_BACKEND=local)
 .media/
+
+# Terraform: zipped Lambda packages and local settings (addresses, tags)
+.build/
+*.auto.tfvars

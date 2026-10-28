@@ -4,21 +4,31 @@ import type { Schemas } from "@/lib/api-client";
 import { categoryIcon } from "@/lib/catalogue";
 import { money } from "@/lib/format";
 
+import { PhotoImage } from "./photo-image";
 import { Badge } from "./ui";
 
+/**
+ * The listing's first photo, or its category icon when it has none. Shows the small
+ * thumbnail by default, which is right for cards and lists; pass `full` where the photo is
+ * shown large.
+ */
 export function ListingPhoto({
   listing,
   className = "aspect-square",
+  full = false,
 }: {
   listing: Schemas["Listing"];
   className?: string;
+  full?: boolean;
 }) {
   const photo = listing.photo_urls?.[0];
+  const thumbnail = listing.thumbnail_urls?.[0];
   return photo ? (
-    <img
+    <PhotoImage
       alt={listing.title}
       className={`w-full object-cover ${className}`}
-      src={photo}
+      fallbackSrc={photo}
+      src={full ? photo : (thumbnail ?? photo)}
     />
   ) : (
     <div

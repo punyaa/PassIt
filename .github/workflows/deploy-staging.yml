@@ -30,6 +30,8 @@ env:
   WEB_REPO: passit-staging-web
   RELEASE_REPO: passit-staging-release
   RELEASE_FUNCTION: passit-staging-release
+  THUMBNAIL_REPO: passit-staging-thumbnailer
+  THUMBNAIL_FUNCTION: passit-staging-thumbnailer
 
 jobs:
   deploy:
@@ -72,6 +74,10 @@ jobs:
           # The fee-release Lambda runs the same app code, so it ships with every deploy.
           # --provenance=false: Lambda cannot read the multi-platform manifest buildx adds.
           push "$RELEASE_REPO" api -f api/Dockerfile.lambda --provenance=false
+          # The photo thumbnailer. Skipped where its registry does not exist yet.
+          if aws ecr describe-repositories --repository-names "$THUMBNAIL_REPO" >/dev/null 2>&1; then
+            push "$THUMBNAIL_REPO" infra/lambdas/thumbnailer --provenance=false
+          fi
 
       - name: Register task definitions with the new image
         env:
@@ -126,6 +132,19 @@ jobs:
           aws lambda update-function-code --function-name "$RELEASE_FUNCTION" \
             --image-uri "$REGISTRY/$RELEASE_REPO:$TAG" --query LastUpdateStatus --output text
           aws lambda wait function-updated --function-name "$RELEASE_FUNCTION"
+
+      - name: Update the thumbnailer Lambda
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          # The function exists once Terraform has been given a thumbnailer image tag.
+          if aws lambda get-function --function-name "$THUMBNAIL_FUNCTION" >/dev/null 2>&1; then
+            aws lambda update-function-code --function-name "$THUMBNAIL_FUNCTION" \
+              --image-uri "$REGISTRY/$THUMBNAIL_REPO:$TAG" --query LastUpdateStatus --output text
+            aws lambda wait function-updated --function-name "$THUMBNAIL_FUNCTION"
+          else
+            echo "No thumbnailer function in this environment, skipping"
+          fi
 
       - name: Smoke test
         run: |

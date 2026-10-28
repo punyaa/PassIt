@@ -22,3 +22,7 @@ output "lambda_function_name" {
 output "repository_arn" {
   value = aws_ecr_repository.release.arn
 }
+
+output "role_arn" {
+  value = aws_iam_role.lambda.arn
+}

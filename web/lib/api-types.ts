@@ -784,6 +784,11 @@ export interface components {
              * @enum {string}
              */
             status: "active" | "paused" | "archived";
+            /**
+             * Thumbnail Urls
+             * @default []
+             */
+            thumbnail_urls: string[];
             /** Title */
             title: string;
         };
@@ -869,6 +874,11 @@ export interface components {
              * @enum {string}
              */
             status: "active" | "paused" | "archived";
+            /**
+             * Thumbnail Urls
+             * @default []
+             */
+            thumbnail_urls: string[];
             /** Title */
             title: string;
         };
