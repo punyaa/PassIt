@@ -1,0 +1,167 @@
+[
+  {
+    "item": "tent",
+    "borrower": 1,
+    "state": "confirmed",
+    "start": 1,
+    "end": 3,
+    "severity": null,
+    "damage": null,
+    "review": null,
+    "lender_review": null
+  },
+  {
+    "item": "projector",
+    "borrower": 0,
+    "state": "confirmed",
+    "start": 1,
+    "end": 2,
+    "severity": null,
+    "damage": null,
+    "review": null,
+    "lender_review": null
+  },
+  {
+    "item": "stroller",
+    "borrower": 2,
+    "state": "confirmed",
+    "start": 3,
+    "end": 5,
+    "severity": null,
+    "damage": null,
+    "review": null,
+    "lender_review": null
+  },
+  {
+    "item": "backpack",
+    "borrower": 2,
+    "state": "handed_over",
+    "start": -1,
+    "end": 1,
+    "severity": null,
+    "damage": null,
+    "review": null,
+    "lender_review": null
+  },
+  {
+    "item": "drill",
+    "borrower": 0,
+    "state": "handed_over",
+    "start": -2,
+    "end": 0,
+    "severity": null,
+    "damage": null,
+    "review": null,
+    "lender_review": null
+  },
+  {
+    "item": "switch",
+    "borrower": 1,
+    "state": "handed_over",
+    "start": -3,
+    "end": 0,
+    "severity": null,
+    "damage": null,
+    "review": null,
+    "lender_review": null
+  },
+  {
+    "item": "picnic-table",
+    "borrower": 0,
+    "state": "returned",
+    "start": -6,
+    "end": -4,
+    "severity": null,
+    "damage": null,
+    "review": null,
+    "lender_review": null
+  },
+  {
+    "item": "mixer",
+    "borrower": 1,
+    "state": "returned",
+    "start": -5,
+    "end": -3,
+    "severity": null,
+    "damage": null,
+    "review": null,
+    "lender_review": null
+  },
+  {
+    "item": "washer",
+    "borrower": 0,
+    "state": "settled",
+    "start": -16,
+    "end": -14,
+    "review": "The washer made the balcony clean-up much easier. All the hose attachments were packed together.",
+    "lender_review": "Aisha returned the hose drained and all the spray attachments were there.",
+    "severity": null,
+    "damage": null
+  },
+  {
+    "item": "sewing",
+    "borrower": 2,
+    "state": "settled",
+    "start": -24,
+    "end": -20,
+    "review": "Used it to shorten curtains. The sample stitch at pickup helped me get started.",
+    "lender_review": "Chloe checked the pedal at pickup and returned the machine neatly packed.",
+    "severity": null,
+    "damage": null
+  },
+  {
+    "item": "gopro",
+    "borrower": 0,
+    "state": "settled",
+    "start": -12,
+    "end": -10,
+    "review": "Good for our short outdoor trip. The older model was clearly explained before I booked.",
+    "lender_review": "The camera came back dry with the case and mounts together. Easy return.",
+    "severity": null,
+    "damage": null
+  },
+  {
+    "item": "air-fryer",
+    "borrower": 3,
+    "state": "damaged",
+    "start": -10,
+    "end": -8,
+    "severity": "minor",
+    "damage": "A new scratch on the outside of the basket was noted at return.",
+    "review": "Worked well for the weekend. We agreed on the small basket scratch during return.",
+    "lender_review": "Daniel was upfront about the basket scratch and we settled it promptly."
+  },
+  {
+    "item": "luggage",
+    "borrower": 4,
+    "state": "damaged",
+    "start": -21,
+    "end": -17,
+    "severity": "moderate",
+    "damage": "One wheel became stiff during the trip and needs repair.",
+    "review": "Useful sizes for our family trip. One wheel needed attention and we discussed it at return.",
+    "lender_review": "Elena flagged the wheel problem early and brought back all three cases."
+  },
+  {
+    "item": "roof-box",
+    "borrower": 1,
+    "state": "cancelled",
+    "start": 4,
+    "end": 7,
+    "severity": null,
+    "damage": null,
+    "review": null,
+    "lender_review": null
+  },
+  {
+    "item": "bread",
+    "borrower": 2,
+    "state": "cancelled",
+    "start": 7,
+    "end": 9,
+    "severity": null,
+    "damage": null,
+    "review": null,
+    "lender_review": null
+  }
+]

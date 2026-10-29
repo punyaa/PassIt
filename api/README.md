@@ -21,6 +21,8 @@ uv run --directory api uvicorn app.main:app --reload --port 8000
 
 The seed prints session tokens. Paste one into **Authorize** at <http://localhost:8000/docs> to call authenticated endpoints.
 
+The seed includes bundled listing photos, distinct descriptions and lender bios, saved items, paused listings and rental history dated relative to the reset day. `seed-01@passit.demo` demonstrates both borrowing and lending, including upcoming pickups and a return due. See [demo content](scripts/demo/README.md) for photo provenance and scenario details. Resetting does not download external images.
+
 ### Tests
 
 Database tests need PostgreSQL 16 because double-booking prevention lives in an exclusion constraint. The suite creates and migrates its own `passit_test` database:
