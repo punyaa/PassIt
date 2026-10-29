@@ -1,0 +1,102 @@
+[
+  {
+    "name": "Aisha Rahman",
+    "bio": "Weekend camper based near Clementi. Happy to show you how my tent packs away before your first trip.",
+    "mrt_station": "Clementi"
+  },
+  {
+    "name": "Ben Tan",
+    "bio": "I lend a few outdoor bits that spend too much time in the cupboard. Usually free for evening pickups.",
+    "mrt_station": "Bedok"
+  },
+  {
+    "name": "Chloe Lim",
+    "bio": "Picnics, paddling and getting outside with friends. Please arrange transport for the larger items.",
+    "mrt_station": "Punggol"
+  },
+  {
+    "name": "Daniel Ng",
+    "bio": "I help organise small gatherings and lend the gear between events. Evening collection works best.",
+    "mrt_station": "Serangoon"
+  },
+  {
+    "name": "Elena Koh",
+    "bio": "Family parties without buying another appliance. I check and clean my equipment between rentals.",
+    "mrt_station": "Tampines"
+  },
+  {
+    "name": "Farhan Ismail",
+    "bio": "I keep a small collection of photo-corner and hosting equipment. Happy to check every part at pickup.",
+    "mrt_station": "Bishan"
+  },
+  {
+    "name": "Grace Wong",
+    "bio": "Weekend DIY enthusiast. Ask about the attachments before booking so you get the right tool.",
+    "mrt_station": "Jurong East"
+  },
+  {
+    "name": "Hari Kumar",
+    "bio": "Most of my tools are used for small jobs around home. We can check the controls together at collection.",
+    "mrt_station": "Toa Payoh"
+  },
+  {
+    "name": "Isabel Chua",
+    "bio": "I enjoy making and mending things. Lending a few household machines to neighbours.",
+    "mrt_station": "Queenstown"
+  },
+  {
+    "name": "Jun Wei Lee",
+    "bio": "Parent with a cupboard of travel equipment. Please check the fit and setup together at pickup.",
+    "mrt_station": "Sengkang"
+  },
+  {
+    "name": "Kavya Menon",
+    "bio": "Family gear for short visits and growing kids. Weekends are easiest for collection.",
+    "mrt_station": "Woodlands"
+  },
+  {
+    "name": "Liam Goh",
+    "bio": "I lend out the baby things we do not use every day. Everything is checked between rentals.",
+    "mrt_station": "Hougang"
+  },
+  {
+    "name": "Mei Ling Teo",
+    "bio": "Photography and movie nights. I keep the camera kit dry and can demonstrate the controls at pickup.",
+    "mrt_station": "Buona Vista"
+  },
+  {
+    "name": "Nur Aisyah",
+    "bio": "Into games and filming little weekend projects. Please count the accessories with me at collection.",
+    "mrt_station": "Kovan"
+  },
+  {
+    "name": "Oliver Sim",
+    "bio": "Trying new gadgets is more fun when they get shared. Usually available after work.",
+    "mrt_station": "Pasir Ris"
+  },
+  {
+    "name": "Priya Nair",
+    "bio": "Home baker who likes trying new recipes. Please return the removable parts clean and dry.",
+    "mrt_station": "Ang Mo Kio"
+  },
+  {
+    "name": "Qi Hui Ong",
+    "bio": "Lending useful home appliances that are only needed occasionally. Evening pickups by arrangement.",
+    "mrt_station": "Bukit Batok"
+  },
+  {
+    "name": "Ravi Pillai",
+    "bio": "I enjoy cooking for friends and making bread. Happy to explain the equipment before you take it home.",
+    "mrt_station": "Yishun"
+  },
+  {
+    "name": "Sofia Yeo",
+    "bio": "Cycling and short trips around the neighbourhood. We can check the fit and brakes at collection.",
+    "mrt_station": "Eunos"
+  },
+  {
+    "name": "Tom Chan",
+    "bio": "Family holidays and road trips. Please check luggage sizes and car compatibility before booking.",
+    "mrt_station": "MacPherson"
+  }
+]

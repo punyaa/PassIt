@@ -20,8 +20,19 @@ async def api_client() -> AsyncIterator[httpx.AsyncClient]:
 
 async def upload_placeholder(client: httpx.AsyncClient, headers: dict, stage: str) -> str:
     """Upload a 1x1 PNG through whichever storage backend is configured."""
+    return await upload_bytes(client, headers, stage, PLACEHOLDER_PNG, "image/png")
+
+
+async def upload_bytes(
+    client: httpx.AsyncClient,
+    headers: dict[str, str],
+    stage: str,
+    data: bytes,
+    content_type: str,
+) -> str:
+    """Upload fixture media through the same presigned flow as an application client."""
     presign = await client.post(
-        "/media/presign", json={"stage": stage, "content_type": "image/png"}, headers=headers
+        "/media/presign", json={"stage": stage, "content_type": content_type}, headers=headers
     )
     presign.raise_for_status()
     body = presign.json()
@@ -29,10 +40,10 @@ async def upload_placeholder(client: httpx.AsyncClient, headers: dict, stage: st
     local = url.startswith(get_settings().public_api_url)
     if local:  # local storage stand-in: send to the in-process app
         url = url.replace(get_settings().public_api_url, "http://passit", 1)
-        response = await client.put(url, content=PLACEHOLDER_PNG, headers=body["headers"])
+        response = await client.put(url, content=data, headers=body["headers"])
     else:  # real presigned S3 URL
         async with httpx.AsyncClient(timeout=30) as s3:
-            response = await s3.put(url, content=PLACEHOLDER_PNG, headers=body["headers"])
+            response = await s3.put(url, content=data, headers=body["headers"])
     response.raise_for_status()
     return body["key"]
 
