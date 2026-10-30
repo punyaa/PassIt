@@ -47,7 +47,7 @@ jobs:
       - name: Image tag
         run: echo "TAG=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_ENV"
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN || 'arn:aws:iam::034313912472:role/passit-staging-github-deploy' }}
           aws-region: ${{ env.AWS_REGION }}
