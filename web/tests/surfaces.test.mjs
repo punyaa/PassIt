@@ -43,6 +43,16 @@ test("marketing stays public and links to the application", async () => {
   assert.equal((page.match(/<header /g) ?? []).length, 1);
 });
 
+test("marketing serves the Plus membership page", async () => {
+  const response = await request("/plus", "localhost:3000", {});
+  assert.equal(response.status, 200);
+  const page = await response.text();
+  assert.match(page, /PassIt Plus/);
+  assert.match(page, /Eco Saver/);
+  assert.match(page, /Mega Saver/);
+  assert.equal((page.match(/<header /g) ?? []).length, 1);
+});
+
 test("application root renders search, not marketing", async () => {
   const response = await request("/?q=camera", "app.localhost:3000", {});
   assert.equal(response.status, 200);

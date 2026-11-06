@@ -16,7 +16,9 @@ export function proxy(request: NextRequest): NextResponse {
     return NextResponse.next();
   }
 
-  if (request.nextUrl.pathname === "/") return NextResponse.next();
+  if (request.nextUrl.pathname === "/" || request.nextUrl.pathname === "/plus") {
+    return NextResponse.next();
+  }
 
   const destination = new URL(applicationOrigin);
   destination.pathname = request.nextUrl.pathname;
