@@ -47,3 +47,8 @@ output/
 # Terraform: zipped Lambda packages and local settings (addresses, tags)
 .build/
 *.auto.tfvars
+
+# Local working files: spec, decks, cost exports, slide images (never pushed).
+# demo-script.md is already part of the repository and stays tracked.
+docs/*
+!docs/demo-script.md

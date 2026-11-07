@@ -41,7 +41,7 @@ SITE_URL = os.environ.get("SITE_URL", "").rstrip("/")
 SKIP_DOMAINS = tuple(
     d.strip().lower()
     for d in os.environ.get(
-        "SKIP_DOMAINS", "passit.demo,example.com,example.org,example.net"
+        "SKIP_DOMAINS", "passit.demo,example.com,example.org,example.net,invalid"
     ).split(",")
     if d.strip()
 )

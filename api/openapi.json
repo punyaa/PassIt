@@ -1,6 +1,55 @@
 {
   "components": {
     "schemas": {
+      "AccountDeletionPreview": {
+        "additionalProperties": false,
+        "description": "What deleting the account would do right now.",
+        "properties": {
+          "allowed": {
+            "title": "Allowed",
+            "type": "boolean"
+          },
+          "listings_archived": {
+            "description": "Listings with rental history: archived, scrubbed.",
+            "title": "Listings Archived",
+            "type": "integer"
+          },
+          "listings_deleted": {
+            "description": "Listings never rented: deleted for good.",
+            "title": "Listings Deleted",
+            "type": "integer"
+          },
+          "open_rentals": {
+            "description": "Rentals still in progress; they block deletion.",
+            "title": "Open Rentals",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "allowed",
+          "open_rentals",
+          "listings_deleted",
+          "listings_archived"
+        ],
+        "title": "AccountDeletionPreview",
+        "type": "object"
+      },
+      "AccountDeletionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "title": "AccountDeletionRequest",
+        "type": "object"
+      },
       "AvailabilityResponse": {
         "additionalProperties": false,
         "properties": {
@@ -1919,6 +1968,125 @@
           }
         ],
         "summary": "Update Profile",
+        "tags": [
+          "authentication"
+        ]
+      }
+    },
+    "/v1/auth/me/delete": {
+      "post": {
+        "description": "Permanently delete the account. Requires the current password.",
+        "operationId": "deleteAccount",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountDeletionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Wrong password"
+          },
+          "409": {
+            "description": "Rentals still in progress"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Account",
+        "tags": [
+          "authentication"
+        ]
+      }
+    },
+    "/v1/auth/me/deletion": {
+      "get": {
+        "description": "Tell the person exactly what deleting their account would do, before they confirm.",
+        "operationId": "previewAccountDeletion",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDeletionPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Preview Account Deletion",
         "tags": [
           "authentication"
         ]

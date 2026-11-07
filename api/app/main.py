@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.auth.deletion import router as account_deletion_router
 from app.auth.router import router as auth_router
 from app.bookings.availability import router as availability_router
 from app.bookings.router import router as bookings_router
@@ -56,6 +57,7 @@ async def health() -> HealthResponse:
 
 
 app.include_router(auth_router, prefix="/v1")
+app.include_router(account_deletion_router, prefix="/v1")
 app.include_router(catalogue_router, prefix="/v1")
 app.include_router(availability_router, prefix="/v1")
 app.include_router(media_router, prefix="/v1")
