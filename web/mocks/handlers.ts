@@ -97,6 +97,21 @@ export const handlers = [
         : null;
     return HttpResponse.json(user);
   }),
+  http.get("*/v1/auth/me/deletion", () => {
+    if (!signedIn) return unauthorized();
+    const preview: Schemas["AccountDeletionPreview"] = {
+      allowed: true,
+      open_rentals: 0,
+      listings_deleted: 0,
+      listings_archived: 1,
+    };
+    return HttpResponse.json(preview);
+  }),
+  http.post("*/v1/auth/me/delete", () => {
+    if (!signedIn) return unauthorized();
+    signedIn = false;
+    return new HttpResponse(null, { status: 204 });
+  }),
   http.get("*/v1/users/:id", ({ params }) =>
     HttpResponse.json({
       user_id: String(params.id),

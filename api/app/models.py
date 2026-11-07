@@ -56,6 +56,7 @@ class User(Base):
     bio: Mapped[str | None] = mapped_column(Text)
     avatar_key: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(server_default=NOW)
+    deleted_at: Mapped[datetime | None]
 
 
 # --- B3 Catalogue ------------------------------------------------------------

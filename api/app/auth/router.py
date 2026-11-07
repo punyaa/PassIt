@@ -91,7 +91,7 @@ async def create_session(
     user = await db.scalar(select(User).where(User.email == _normalise(payload.email)))
     # Always verify, even for unknown emails, so the two failure cases are indistinguishable.
     valid = verify_password(payload.password, user.password_hash if user else None)
-    if user is None or not valid:
+    if user is None or not valid or user.deleted_at is not None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid email or password")
     return _start_session(response, user)
 

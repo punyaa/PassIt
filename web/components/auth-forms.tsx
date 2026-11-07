@@ -30,6 +30,7 @@ function authMessage(error: unknown): string {
 
 export function LoginForm() {
   const afterSignIn = useAfterSignIn();
+  const accountDeleted = useSearchParams().get("deleted") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string>();
@@ -51,6 +52,11 @@ export function LoginForm() {
 
   return (
     <div className="space-y-6">
+      {accountDeleted && (
+        <Alert tone="success">
+          Your account has been deleted and your personal details erased.
+        </Alert>
+      )}
       <Card>
         <form className="space-y-5" onSubmit={submit}>
           <Field label="Email">

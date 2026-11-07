@@ -252,6 +252,9 @@ async def create_booking(
             raise HTTPException(
                 status.HTTP_409_CONFLICT, "Those dates are already booked"
             ) from error
+        if _constraint_name(error) == "bookings_listing_id_fkey":
+            # The lender deleted the listing while this request was in flight.
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Listing not available") from error
         raise
     except OperationalError as error:
         await db.rollback()
