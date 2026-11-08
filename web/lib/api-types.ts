@@ -626,6 +626,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/memberships/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Membership
+         * @description The caller's Plus membership. 404 for pre-membership accounts, which are Saver.
+         */
+        get: operations["getMyMembership"];
+        put?: never;
+        /**
+         * Set My Membership
+         * @description Choose a plan. Simulated: no charge, the new period starts immediately.
+         */
+        post: operations["setMyMembership"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/payments/bookings/{booking_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Booking Payment */
+        get: operations["getBookingPayment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/reviews": {
         parameters: {
             query?: never;
@@ -869,10 +910,64 @@ export interface components {
              */
             listing_id: string;
             /**
+             * Payment Method Token
+             * @default pm_mock_success
+             * @enum {string}
+             */
+            payment_method_token: "pm_mock_success" | "pm_mock_declined" | "pm_mock_insufficient_funds" | "pm_mock_expired" | "pm_mock_processing_error";
+            /**
              * Start Date
              * Format: date
              */
             start_date: string;
+        };
+        /** BookingPaymentResponse */
+        BookingPaymentResponse: {
+            /** Amount */
+            amount: string;
+            /**
+             * Booking Id
+             * Format: uuid
+             */
+            booking_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Currency
+             * @constant
+             */
+            currency: "SGD";
+            /** Failure Code */
+            failure_code: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Operations */
+            operations: components["schemas"]["PaymentOperationResponse"][];
+            /** Payment Method Label */
+            payment_method_label: string;
+            /**
+             * Provider
+             * @constant
+             */
+            provider: "mock";
+            /** Provider Reference */
+            provider_reference: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "captured" | "partially_refunded" | "refunded" | "failed" | "cancelled";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** ChecklistItem */
         ChecklistItem: {
@@ -917,6 +1012,11 @@ export interface components {
             display_name: string;
             /** Email */
             email: string;
+            /**
+             * Plan
+             * @default saver
+             */
+            plan: string;
             /** User Id */
             user_id: string;
         };
@@ -1361,12 +1461,85 @@ export interface components {
              */
             price: number | string;
         };
+        /** MembershipChange */
+        MembershipChange: {
+            /**
+             * Plan
+             * @enum {string}
+             */
+            plan: "saver" | "eco-saver" | "mega-saver";
+        };
+        /** MembershipResponse */
+        MembershipResponse: {
+            /** Current Period End */
+            current_period_end: string | null;
+            /**
+             * Current Period Start
+             * Format: date-time
+             */
+            current_period_start: string;
+            perks: components["schemas"]["PerksResponse"];
+            /**
+             * Plan
+             * @enum {string}
+             */
+            plan: "saver" | "eco-saver" | "mega-saver";
+            /** Status */
+            status: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
         /** MrtStation */
         MrtStation: {
             /** Name */
             name: string;
             /** Planning Area */
             planning_area: string;
+        };
+        /** PaymentOperationResponse */
+        PaymentOperationResponse: {
+            /** Amount */
+            amount: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Failure Code */
+            failure_code: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Operation
+             * @enum {string}
+             */
+            operation: "charge" | "refund" | "payout";
+            /** Provider Reference */
+            provider_reference: string;
+            /** Recipient Id */
+            recipient_id: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "succeeded" | "failed";
+        };
+        /** PerksResponse */
+        PerksResponse: {
+            /** Delivery Credits */
+            delivery_credits: number;
+            /** Deposit Factor */
+            deposit_factor: string;
+            /** Free Rescheduling */
+            free_rescheduling: boolean;
+            /** Grace Days */
+            grace_days: number;
         };
         /** PresignRequest */
         PresignRequest: {
@@ -1529,6 +1702,8 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+            /** Plan */
+            plan?: ("saver" | "eco-saver" | "mega-saver") | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -1858,6 +2033,13 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Booking"];
                 };
+            };
+            /** @description Mock payment failed */
+            402: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Dates already booked or outside availability */
             409: {
@@ -2850,6 +3032,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Meetup"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getMyMembership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    setMyMembership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MembershipChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getBookingPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingPaymentResponse"];
                 };
             };
             /** @description Validation Error */

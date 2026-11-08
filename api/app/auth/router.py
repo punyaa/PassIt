@@ -11,6 +11,8 @@ from app.core.config import get_settings
 from app.core.db import DbSession
 from app.integrations.storage import get_storage
 from app.media.service import require_owned_keys
+from app.memberships import service as membership_service
+from app.memberships.plans import Plan
 from app.models import User
 from app.schemas import ApiModel
 
@@ -28,6 +30,7 @@ class SignupRequest(ApiModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     display_name: str = Field(min_length=1, max_length=80)
+    plan: Plan | None = None  # Plus plan from /plus; omitted means free Eco Saver
 
 
 class SessionResponse(ApiModel):
@@ -39,6 +42,7 @@ class CurrentUserResponse(ApiModel):
     user_id: str
     display_name: str
     email: str
+    plan: str = "saver"
     bio: str | None
     avatar_url: str | None
 
@@ -77,6 +81,8 @@ async def create_account(
     )
     db.add(user)
     try:
+        await db.flush()  # populate user.id for the membership row below
+        await membership_service.start_membership(db, user.id, payload.plan or "saver")
         await db.commit()
     except IntegrityError as error:
         await db.rollback()
@@ -102,12 +108,13 @@ async def delete_session(response: Response) -> None:
 
 
 @router.get("/me", response_model=CurrentUserResponse, operation_id="getCurrentUser")
-async def get_current_user(user: CurrentUser) -> CurrentUserResponse:
+async def get_current_user(user: CurrentUser, db: DbSession) -> CurrentUserResponse:
     """Who the session belongs to. 401 when signed out."""
     return CurrentUserResponse(
         user_id=str(user.id),
         display_name=user.display_name,
         email=user.email,
+        plan=await membership_service.plan_for(db, user.id),
         bio=user.bio,
         avatar_url=get_storage().view_url(user.avatar_key) if user.avatar_key else None,
     )
@@ -138,4 +145,4 @@ async def update_profile(
             value = value.strip() or None
         setattr(user, field, value)
     await db.commit()
-    return await get_current_user(user)
+    return await get_current_user(user, db)

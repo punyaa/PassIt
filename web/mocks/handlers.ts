@@ -28,6 +28,7 @@ const user: Schemas["CurrentUserResponse"] = {
   user_id: listing.owner_id,
   display_name: "Lena Tan",
   email: "lena@example.test",
+  plan: "saver",
   bio: null,
   avatar_url: null,
 };
@@ -254,7 +255,30 @@ export const handlers = [
     signedIn ? HttpResponse.json([booking]) : unauthorized(),
   ),
   http.get("*/v1/bookings/:id", () => HttpResponse.json(booking)),
-  http.post("*/v1/bookings", () => HttpResponse.json(booking, { status: 201 })),
+  http.post("*/v1/bookings", async ({ request }) => {
+    const body = (await request.json()) as { payment_method_token?: string };
+    const failures: Record<string, { code: string; message: string; retryable: boolean }> = {
+      pm_mock_declined: { code: "card_declined", message: "The mock payment was declined.", retryable: false },
+      pm_mock_insufficient_funds: {
+        code: "insufficient_funds",
+        message: "The mock payment method has insufficient funds.",
+        retryable: false,
+      },
+      pm_mock_expired: {
+        code: "expired_payment_method",
+        message: "The mock payment method has expired.",
+        retryable: false,
+      },
+      pm_mock_processing_error: {
+        code: "processing_error",
+        message: "The mock gateway had a temporary processing error. Please retry.",
+        retryable: true,
+      },
+    };
+    const failure = body.payment_method_token && failures[body.payment_method_token];
+    if (failure) return HttpResponse.json({ detail: failure }, { status: 402 });
+    return HttpResponse.json(booking, { status: 201 });
+  }),
   http.get("*/v1/meetups", () =>
     signedIn ? HttpResponse.json(meetups) : unauthorized(),
   ),

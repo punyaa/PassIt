@@ -35,6 +35,7 @@ def test_expected_contract_operations_are_registered() -> None:
         "cancelBooking",
         "settleBooking",
         "getBookingChecklists",
+        "getBookingPayment",
         "listReviews",
         "createMeetup",
         "listMeetups",

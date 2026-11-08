@@ -10,8 +10,10 @@ from sqlalchemy import select
 
 from app.core.db import get_sessionmaker
 from app.integrations.notifications import publish_event
+from app.memberships.renewal import expire_due_memberships
 from app.models import Booking, LedgerEntry, Listing
 from app.notifications.events import build_booking_event
+from app.payments import service as payment_service
 from app.transactions import service
 
 logger = logging.getLogger(__name__)
@@ -45,6 +47,10 @@ async def handle_release(booking_id: UUID | str, now: datetime | None = None) ->
         elif booking.fee_release_at is None or booking.fee_release_at > now:
             status = "not_due"
         else:
+            lender_id = await db.scalar(
+                select(Listing.owner_id).where(Listing.id == booking.listing_id)
+            )
+            await payment_service.payout_fee(db, booking, lender_id)
             await service.release_fee(db, booking)
             status = "released"
             listing = await db.get(Listing, booking.listing_id)
@@ -82,5 +88,6 @@ async def run_local_sweep(interval_seconds: int) -> None:
         await asyncio.sleep(interval_seconds)
         try:
             await release_due_fees()
+            await expire_due_memberships()
         except Exception:  # keep the loop alive; the next tick retries
-            logger.exception("local fee-release sweep failed")
+            logger.exception("local release/expiry sweep failed")

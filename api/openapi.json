@@ -340,6 +340,18 @@
             "title": "Listing Id",
             "type": "string"
           },
+          "payment_method_token": {
+            "default": "pm_mock_success",
+            "enum": [
+              "pm_mock_success",
+              "pm_mock_declined",
+              "pm_mock_insufficient_funds",
+              "pm_mock_expired",
+              "pm_mock_processing_error"
+            ],
+            "title": "Payment Method Token",
+            "type": "string"
+          },
           "start_date": {
             "format": "date",
             "title": "Start Date",
@@ -353,6 +365,98 @@
           "duration_type"
         ],
         "title": "BookingCreate",
+        "type": "object"
+      },
+      "BookingPaymentResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "booking_id": {
+            "format": "uuid",
+            "title": "Booking Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "currency": {
+            "const": "SGD",
+            "title": "Currency",
+            "type": "string"
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Code"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "operations": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentOperationResponse"
+            },
+            "title": "Operations",
+            "type": "array"
+          },
+          "payment_method_label": {
+            "title": "Payment Method Label",
+            "type": "string"
+          },
+          "provider": {
+            "const": "mock",
+            "title": "Provider",
+            "type": "string"
+          },
+          "provider_reference": {
+            "title": "Provider Reference",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "captured",
+              "partially_refunded",
+              "refunded",
+              "failed",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "booking_id",
+          "amount",
+          "currency",
+          "status",
+          "provider",
+          "provider_reference",
+          "payment_method_label",
+          "failure_code",
+          "created_at",
+          "updated_at",
+          "operations"
+        ],
+        "title": "BookingPaymentResponse",
         "type": "object"
       },
       "ChecklistItem": {
@@ -497,6 +601,11 @@
           },
           "email": {
             "title": "Email",
+            "type": "string"
+          },
+          "plan": {
+            "default": "saver",
+            "title": "Plan",
             "type": "string"
           },
           "user_id": {
@@ -1703,6 +1812,78 @@
         "title": "MeetupTerms",
         "type": "object"
       },
+      "MembershipChange": {
+        "additionalProperties": false,
+        "properties": {
+          "plan": {
+            "enum": [
+              "saver",
+              "eco-saver",
+              "mega-saver"
+            ],
+            "title": "Plan",
+            "type": "string"
+          }
+        },
+        "required": [
+          "plan"
+        ],
+        "title": "MembershipChange",
+        "type": "object"
+      },
+      "MembershipResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "current_period_end": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Period End"
+          },
+          "current_period_start": {
+            "format": "date-time",
+            "title": "Current Period Start",
+            "type": "string"
+          },
+          "perks": {
+            "$ref": "#/components/schemas/PerksResponse"
+          },
+          "plan": {
+            "enum": [
+              "saver",
+              "eco-saver",
+              "mega-saver"
+            ],
+            "title": "Plan",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "plan",
+          "status",
+          "current_period_start",
+          "current_period_end",
+          "perks"
+        ],
+        "title": "MembershipResponse",
+        "type": "object"
+      },
       "MrtStation": {
         "additionalProperties": false,
         "properties": {
@@ -1720,6 +1901,110 @@
           "planning_area"
         ],
         "title": "MrtStation",
+        "type": "object"
+      },
+      "PaymentOperationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "amount": {
+            "title": "Amount",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "failure_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Code"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "operation": {
+            "enum": [
+              "charge",
+              "refund",
+              "payout"
+            ],
+            "title": "Operation",
+            "type": "string"
+          },
+          "provider_reference": {
+            "title": "Provider Reference",
+            "type": "string"
+          },
+          "recipient_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipient Id"
+          },
+          "status": {
+            "enum": [
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "operation",
+          "amount",
+          "status",
+          "recipient_id",
+          "provider_reference",
+          "failure_code",
+          "created_at"
+        ],
+        "title": "PaymentOperationResponse",
+        "type": "object"
+      },
+      "PerksResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "delivery_credits": {
+            "title": "Delivery Credits",
+            "type": "integer"
+          },
+          "deposit_factor": {
+            "title": "Deposit Factor",
+            "type": "string"
+          },
+          "free_rescheduling": {
+            "title": "Free Rescheduling",
+            "type": "boolean"
+          },
+          "grace_days": {
+            "title": "Grace Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "deposit_factor",
+          "free_rescheduling",
+          "delivery_credits",
+          "grace_days"
+        ],
+        "title": "PerksResponse",
         "type": "object"
       },
       "PresignRequest": {
@@ -2125,6 +2410,22 @@
             "minLength": 8,
             "title": "Password",
             "type": "string"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "enum": [
+                  "saver",
+                  "eco-saver",
+                  "mega-saver"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan"
           }
         },
         "required": [
@@ -2691,6 +2992,9 @@
               }
             },
             "description": "Successful Response"
+          },
+          "402": {
+            "description": "Mock payment failed"
           },
           "409": {
             "description": "Dates already booked or outside availability"
@@ -4798,6 +5102,188 @@
         "summary": "Decline Meetup",
         "tags": [
           "meetups"
+        ]
+      }
+    },
+    "/v1/memberships/me": {
+      "get": {
+        "description": "The caller's Plus membership. 404 for pre-membership accounts, which are Saver.",
+        "operationId": "getMyMembership",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get My Membership",
+        "tags": [
+          "memberships"
+        ]
+      },
+      "post": {
+        "description": "Choose a plan. Simulated: no charge, the new period starts immediately.",
+        "operationId": "setMyMembership",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembershipChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set My Membership",
+        "tags": [
+          "memberships"
+        ]
+      }
+    },
+    "/v1/payments/bookings/{booking_id}": {
+      "get": {
+        "operationId": "getBookingPayment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "booking_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Booking Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookingPaymentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Booking Payment",
+        "tags": [
+          "payments"
         ]
       }
     },

@@ -176,6 +176,37 @@ class LedgerEntry(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=NOW)
 
 
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=UUID_DEFAULT)
+    booking_id: Mapped[UUID] = mapped_column(ForeignKey("bookings.id"), unique=True)
+    amount: Mapped[Decimal] = mapped_column(Money)
+    currency: Mapped[str] = mapped_column(Text, server_default=text("'SGD'"))
+    status: Mapped[str] = mapped_column(Text)
+    provider: Mapped[str] = mapped_column(Text, server_default=text("'mock'"))
+    provider_reference: Mapped[str] = mapped_column(Text, unique=True)
+    payment_method_label: Mapped[str] = mapped_column(Text)
+    failure_code: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(server_default=NOW)
+    updated_at: Mapped[datetime] = mapped_column(server_default=NOW)
+
+
+class PaymentOperation(Base):
+    __tablename__ = "payment_operations"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=UUID_DEFAULT)
+    payment_id: Mapped[UUID] = mapped_column(ForeignKey("payments.id"))
+    operation: Mapped[str] = mapped_column(Text)
+    amount: Mapped[Decimal] = mapped_column(Money)
+    status: Mapped[str] = mapped_column(Text)
+    recipient_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    idempotency_key: Mapped[str] = mapped_column(Text, unique=True)
+    provider_reference: Mapped[str] = mapped_column(Text, unique=True)
+    failure_code: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(server_default=NOW)
+
+
 class SavedListing(Base):
     __tablename__ = "saved_listings"
 
@@ -214,6 +245,33 @@ class MeetupEvent(Base):
     location: Mapped[str | None] = mapped_column(Text)
     price: Mapped[Decimal | None] = mapped_column(Money)
     message: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(server_default=NOW)
+
+
+# --- Plus Membership ---------------------------------------------------------
+
+
+class Membership(Base):
+    __tablename__ = "memberships"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=UUID_DEFAULT)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), unique=True)
+    plan: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text)
+    current_period_start: Mapped[datetime] = mapped_column(server_default=NOW)
+    current_period_end: Mapped[datetime | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=NOW)
+    updated_at: Mapped[datetime] = mapped_column(server_default=NOW)
+
+
+class MembershipEvent(Base):
+    __tablename__ = "membership_events"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=UUID_DEFAULT)
+    membership_id: Mapped[UUID] = mapped_column(ForeignKey("memberships.id"))
+    event: Mapped[str] = mapped_column(Text)
+    from_plan: Mapped[str | None] = mapped_column(Text)
+    to_plan: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(server_default=NOW)
 
 

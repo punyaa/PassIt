@@ -20,9 +20,13 @@ from app.integrations.notifications import publish_event
 from app.integrations.scheduler import get_scheduler
 from app.integrations.storage import get_storage
 from app.media.service import attach_media
+from app.memberships.plans import deposit_for
+from app.memberships.service import plan_for
 from app.models import Availability, Checklist, Listing, Media, Review, User, inclusive_range
 from app.models import Booking as BookingRow
 from app.notifications.events import Actor, EventType, build_booking_event
+from app.payments import service as payment_service
+from app.payments.gateway import PaymentGatewayError
 from app.schemas import ApiModel
 from app.transactions import service as ledger_service
 
@@ -44,6 +48,13 @@ class BookingCreate(ApiModel):
     start_date: date
     end_date: date
     duration_type: DurationType
+    payment_method_token: Literal[
+        "pm_mock_success",
+        "pm_mock_declined",
+        "pm_mock_insufficient_funds",
+        "pm_mock_expired",
+        "pm_mock_processing_error",
+    ] = "pm_mock_success"
 
 
 class Booking(ApiModel):
@@ -208,7 +219,10 @@ async def _record_checklist(
     response_model=Booking,
     status_code=status.HTTP_201_CREATED,
     operation_id="createBooking",
-    responses={409: {"description": "Dates already booked or outside availability"}},
+    responses={
+        402: {"description": "Mock payment failed"},
+        409: {"description": "Dates already booked or outside availability"},
+    },
 )
 async def create_booking(
     request: BookingCreate, user: CurrentUser, db: DbSession, background: BackgroundTasks
@@ -238,14 +252,18 @@ async def create_booking(
         period=inclusive_range(start, end),
         duration_type=request.duration_type,
         fee=price_for(listing, request.duration_type, start, end),
-        deposit=listing.deposit,
+        deposit=deposit_for(await plan_for(db, user.id), listing.deposit),
         state="confirmed",
     )
     db.add(booking)
     try:
         await db.flush()  # the exclusion constraint fires here
+        await payment_service.collect_booking_payment(db, booking, request.payment_method_token)
         await ledger_service.hold_funds(db, booking)  # same transaction as the booking
         await db.commit()
+    except PaymentGatewayError as error:
+        await db.rollback()
+        raise HTTPException(status.HTTP_402_PAYMENT_REQUIRED, detail=error.detail()) from error
     except IntegrityError as error:
         await db.rollback()
         if _constraint_name(error) == "no_overlap":
@@ -352,6 +370,7 @@ async def cancel_booking(
     """Cancel before handover. Both holds are refunded and the dates are freed."""
     booking, listing, role = await _load_for_party(db, booking_id, user.id, lock=True)
     require_action("cancel", booking.state, role)
+    await payment_service.refund_cancelled_booking(db, booking)
     await ledger_service.reverse_holds(db, booking)
     booking.state = "cancelled"
     booking.cancelled_at = datetime.now(UTC)
@@ -371,6 +390,7 @@ async def _settle(
 ) -> Booking:
     booking, listing, role = await _load_for_party(db, booking_id, user.id, lock=True)
     require_action(action, booking.state, role)
+    await payment_service.settle_deposit(db, booking, listing.owner_id, severity)
     await ledger_service.settle_deposit(db, booking, severity)
     booking.damage_severity = severity
     booking.damage_notes = notes

@@ -13,7 +13,10 @@ export class ApiError extends Error {
   }
 }
 
-type Detail = string | { msg: string; loc?: (string | number)[] }[] | { feature?: string; owner?: string };
+type Detail =
+  | string
+  | { msg: string; loc?: (string | number)[] }[]
+  | { feature?: string; owner?: string; code?: string; message?: string; retryable?: boolean };
 
 function describe(status: number, detail: Detail | undefined): string {
   if (typeof detail === "string") return detail;
@@ -25,6 +28,7 @@ function describe(status: number, detail: Detail | undefined): string {
       })
       .join("; ");
   }
+  if (detail?.message) return detail.message;
   if (detail?.feature) return `${detail.feature} is not available yet (${detail.owner}).`;
   return `PassIt API returned ${status}.`;
 }

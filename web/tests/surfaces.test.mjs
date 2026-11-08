@@ -52,6 +52,16 @@ test("marketing stays public and links to the application", async () => {
   assert.equal((page.match(/<header /g) ?? []).length, 1);
 });
 
+test("marketing serves the Plus membership page", async () => {
+  const response = await request("/plus", "localhost:3000", {});
+  assert.equal(response.status, 200);
+  const page = await response.text();
+  assert.match(page, /PassIt Plus/);
+  assert.match(page, /Eco Saver/);
+  assert.match(page, /Prime Saver/);
+  assert.equal((page.match(/<header /g) ?? []).length, 1);
+});
+
 test("application root renders Home, not marketing", async () => {
   const response = await request("/?q=camera", "app.localhost:3000", {});
   assert.equal(response.status, 200);
@@ -89,6 +99,7 @@ test("application routes remain directly accessible", async () => {
     "/listings/new",
     "/listings/manage",
     "/dashboard/lender",
+    "/membership",
   ]) {
     const response = await request(path, "app.localhost:3000", {});
     assert.equal(response.status, 200, path);
