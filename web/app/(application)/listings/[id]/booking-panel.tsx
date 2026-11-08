@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { CheckoutDialog, type PaymentDetails } from "@/components/checkout-dialog";
 import { useSession } from "@/components/session";
 import { Alert, Button, Card, Field, Input, Select } from "@/components/ui";
 import {
@@ -13,6 +14,8 @@ import {
   type Schemas,
   withQuery,
 } from "@/lib/api-client";
+import { isPlusPlan, PLUS_PLAN_NAMES } from "@/lib/auth";
+import { DEPOSIT_FACTOR } from "@/lib/plus-plans";
 import {
   addDays,
   dateRange,
@@ -66,8 +69,14 @@ export function BookingPanel({
   const [checking, setChecking] = useState(true);
   const [availabilityError, setAvailabilityError] = useState(false);
   const [error, setError] = useState<string>();
-  const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState(0);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [notice, setNotice] = useState<{ tone: "success" | "info"; text: string }>();
+  // Plus members pay a share of the deposit; the API applies the same factor.
+  const userPlan = user?.plan ?? null;
+  const plan = isPlusPlan(userPlan) ? userPlan : "saver";
+  const deposit = Math.round(Number(listing.deposit) * DEPOSIT_FACTOR[plan] * 100) / 100;
+  const depositNote = plan === "saver" ? undefined : `${PLUS_PLAN_NAMES[plan]} price`;
 
   const validRange = start >= today && end >= start;
   const days = validRange ? inclusiveDays(start, end) : 0;
@@ -103,8 +112,7 @@ export function BookingPanel({
     };
   }, [listing.id, start, end, validRange, version]);
 
-  async function book() {
-    setBusy(true);
+  async function markPaid(details: PaymentDetails): Promise<void> {
     setError(undefined);
     try {
       const booking = await apiPost<Schemas["Booking"]>("/bookings", {
@@ -112,22 +120,37 @@ export function BookingPanel({
         start_date: start,
         end_date: end,
         duration_type: duration,
+        payment_method_token: "pm_mock_success",
       });
-      router.push(`/bookings/${booking.id}?new=1`);
+      setCheckoutOpen(false);
+      const card = details.method === "credit/debit card" && /^\d{4}$/.test(details.reference);
+      const via = details.method
+        ? ` by ${details.method}${card ? ` ending ${details.reference}` : ""}`
+        : "";
+      const by = details.name.trim() ? ` (${details.name.trim()})` : "";
+      setNotice({
+        tone: "success",
+        text: `Successfully paid${via}${by}. Taking you to your booking for handover…`,
+      });
+      setTimeout(() => router.push(`/bookings/${booking.id}?new=1`), 1500);
     } catch (caught) {
       if (caught instanceof ApiError && caught.status === 409) {
+        setCheckoutOpen(false);
         setError(
           caught.message.includes("availability")
             ? "The lender isn't offering those dates. Pick dates inside their open windows."
             : "Someone just booked those dates. Please choose different dates.",
         );
         setVersion((value) => value + 1);
-      } else {
-        setError(caught instanceof Error ? caught.message : "Booking failed.");
+        return;
       }
-    } finally {
-      setBusy(false);
+      throw caught; // shown inside the payment portal
     }
+  }
+
+  function cancelPayment() {
+    setCheckoutOpen(false);
+    setNotice({ tone: "info", text: "Payment cancelled. Nothing was booked or charged." });
   }
 
   const currentAvailability =
@@ -231,12 +254,12 @@ export function BookingPanel({
           </div>
           <div className="flex justify-between">
             <dt className="text-muted">Refundable deposit</dt>
-            <dd className="font-bold">{money(listing.deposit)}</dd>
+            <dd className="font-bold">{money(deposit)}</dd>
           </div>
           <div className="flex justify-between border-t border-line pt-2 text-base">
             <dt className="font-extrabold">Held today</dt>
             <dd className="font-extrabold">
-              {money(quote.fee + Number(listing.deposit))}
+              {money(quote.fee + deposit)}
             </dd>
           </div>
         </dl>
@@ -247,14 +270,22 @@ export function BookingPanel({
           <Alert>{error}</Alert>
         </div>
       )}
+      {notice && (
+        <div className="mt-4">
+          <Alert tone={notice.tone}>{notice.text}</Alert>
+        </div>
+      )}
 
       <div className="mt-5">
         {user ? (
           <Button
-            busy={busy}
             className="w-full"
-            disabled={!canBook}
-            onClick={book}
+            disabled={!canBook || notice?.tone === "success"}
+            onClick={() => {
+              setError(undefined);
+              setNotice(undefined);
+              setCheckoutOpen(true);
+            }}
             variant="accent"
           >
             Book now
@@ -268,6 +299,18 @@ export function BookingPanel({
           </Link>
         )}
       </div>
+      {quote && (
+        <CheckoutDialog
+          open={checkoutOpen}
+          onCancel={cancelPayment}
+          onMarkPaid={markPaid}
+          title={listing.title}
+          dates={dateRange(start, end)}
+          fee={quote.fee}
+          deposit={deposit}
+          depositNote={depositNote}
+        />
+      )}
       <p className="mt-3 text-xs leading-5 text-muted">
         Payments are simulated. PassIt holds the fee and releases it to the
         lender after a short hold period that starts at handover; the deposit

@@ -8,6 +8,7 @@ import { ConfirmAction } from "@/components/confirm-action";
 import { useAccountData } from "@/components/account-data";
 import { BookingStateBadge } from "@/components/booking-state";
 import { LedgerTable, settlement } from "@/components/booking-summary";
+import { PaymentCard } from "@/components/payment-card";
 import { Alert, Card, LinkButton, Spinner } from "@/components/ui";
 import { apiPost, type Schemas } from "@/lib/api-client";
 import {
@@ -112,6 +113,11 @@ export function BookingView({ id }: { id: string }) {
             </div>
           </dl>
         </Card>
+        <PaymentCard
+          bookingId={b.id}
+          viewer={b.viewer_role}
+          version={`${b.state}:${b.fee_released}`}
+        />
         <Card>
           <h2 className="font-extrabold">Your money</h2>
           <p className="mb-3 text-xs text-muted">

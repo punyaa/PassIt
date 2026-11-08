@@ -62,3 +62,10 @@ export const PLAN_DETAILS: Record<PlusPlan, PlanDetails> = {
     ],
   },
 };
+
+/** Share of a listing's deposit each plan pays (mirrors `deposit_factor` in plans.py). */
+export const DEPOSIT_FACTOR: Record<PlusPlan, number> = {
+  saver: 1,
+  "eco-saver": 0.75,
+  "mega-saver": 0,
+};
