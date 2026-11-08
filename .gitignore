@@ -52,3 +52,6 @@ output/
 # demo-script.md is already part of the repository and stays tracked.
 docs/*
 !docs/demo-script.md
+
+# Files Claude saves into the project folder
+Claude outputs/
