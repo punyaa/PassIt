@@ -4,7 +4,7 @@
 //
 //   k6 run -e BASE_URL=https://<cloudfront> scripts/loadtest/booking.js
 //
-// Needs the seeded demo data (20 users, 40 listings). RATE bookings/s for DURATION
+// Needs the seeded demo data (22 users, 43 listings). RATE bookings/s for DURATION
 // (default 20/s for 5m = 6,000 slots). Slots fall on START_OFFSET_DAYS and onward, one day per
 // 40 bookings, so re-running needs a fresh seed or a different START_OFFSET_DAYS.
 import http from "k6/http";

@@ -7,7 +7,7 @@
   - `seed`: deterministic demo data (B3), with bundled photos, lender bios, saved items and coherent rental history. `--reset` wipes the database first. Content and photo sources live in `api/scripts/demo/`; `seed-01@passit.demo` demonstrates both rental roles.
   - `contention_setup`: creates a listing plus N borrowers with tokens, as inputs for `contention.js` (B1).
   - `release_due_fees`: releases every fee whose hold period has ended; idempotent (B2).
-- `demo-reset/reset.sh <staging|demo>`: Platform's one-command reset. Runs the migration and seed as a one-off ECS task, then checks the site. Seed users sign in as `seed-01@passit.demo` to `seed-20@passit.demo` with password `passit-demo-2026`.
+- `demo-reset/reset.sh <staging|demo>`: Platform's one-command reset. Runs the migration and seed as a one-off ECS task, then checks the site. Seed users sign in as `seed-01@passit.demo` to `seed-22@passit.demo` with password `passit-demo-2026`.
 
 Scripts must default to non-production targets and require an explicit base URL.
 

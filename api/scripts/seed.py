@@ -1,11 +1,11 @@
-"""Deterministic demo data (B3): 20 users, 40 listings, 15 bookings across the lifecycle.
+"""Deterministic demo data with bookings across the rental lifecycle.
 
     uv run --directory api python -m scripts.seed --reset
     docker compose exec api python -m scripts.seed --reset
 
 Bookings are driven through the real API in-process, so every ledger entry, checklist and
 state transition is produced by the same code the app uses. Seed users sign in as
-`seed-01@passit.demo` to `seed-20@passit.demo` with the password below, and the script also
+`seed-01@passit.demo` through `seed-22@passit.demo` with the password below, and the script also
 prints session tokens for load tests.
 """
 
@@ -50,7 +50,7 @@ async def reset() -> None:
 
 
 async def create_users(today: date) -> list[UUID]:
-    password_hash = hash_password(DEMO_PASSWORD)  # one hash for all 20 accounts
+    password_hash = hash_password(DEMO_PASSWORD)  # one hash for all demo accounts
     async with get_sessionmaker()() as db:
         users = [
             User(
@@ -85,7 +85,7 @@ async def run() -> None:
     listings: dict[str, tuple[UUID, UUID, DemoItem]] = {}
     async with api_client() as client:
         for index, item in enumerate(ITEMS):
-            owner = user_ids[item["owner"]]  # two related listings per user
+            owner = user_ids[item["owner"]]
             photos = [
                 await upload_item_photo(client, owner, "listing", item, position)
                 for position in range(len(item["photos"]))
@@ -173,7 +173,10 @@ async def run() -> None:
     async with get_sessionmaker()() as db:
         listing_count = await db.scalar(select(func.count()).select_from(Listing))
     print(f"Seeded {len(user_ids)} users, {listing_count} listings, {len(BOOKING_PLAN)} bookings.")
-    print(f"Demo logins: seed-01@passit.demo ... seed-20@passit.demo, password {DEMO_PASSWORD}")
+    print(
+        f"Demo logins: seed-01@passit.demo ... seed-{len(user_ids):02d}@passit.demo, "
+        f"password {DEMO_PASSWORD}"
+    )
     print("Session tokens (valid 30 days) for the demo:")
     for user_id, person in list(zip(user_ids, PEOPLE, strict=True))[:3]:
         print(f"  {person['name']:<14} {auth(user_id)['authorization']}")
@@ -224,6 +227,8 @@ async def advance(
     else:
         await post("settle", owner, None)
     for author, comment in ((borrower, scenario["review"]), (owner, scenario["lender_review"])):
+        if comment is None:
+            continue
         review = {
             "booking_id": str(booking_id),
             "rating": 4 if final_state == "damaged" else 5,

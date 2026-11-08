@@ -17,7 +17,7 @@ Staging runs on AWS (ap-southeast-1) behind CloudFront, over HTTPS:
 | OpenAPI contract | <https://d2qlmvfhlu3k82.cloudfront.net/openapi.json> |
 | API health | <https://d2qlmvfhlu3k82.cloudfront.net/health> |
 
-Try it with a seeded account: `seed-02@passit.demo` with password `passit-demo-2026` (any of `seed-01` to `seed-20` works), or create your own account. Payments are simulated, and the fee hold after handover is 1 minute on staging so a release can be seen straight away.
+Try it with a seeded account: `seed-02@passit.demo` with password `passit-demo-2026` (any of `seed-01` to `seed-22` works), or create your own account. Payments are simulated, and the fee hold after handover is 1 minute on staging so a release can be seen straight away.
 
 The separate evaluator-facing **demo** environment is defined in `infra/terraform/environments/demo/` but not deployed yet. Architecture, deploys and how to rebuild an environment are in [`infra/README.md`](infra/README.md).
 
@@ -41,7 +41,7 @@ Both frontend hostnames use the same Next.js service. Application API requests u
 
 If you already have a local `.env`, set `NEXT_PUBLIC_API_URL=/v1`, `NEXT_PUBLIC_APP_URL=http://app.localhost:3000`, and `PASSIT_PUBLIC_API_URL=http://app.localhost:3000`, then rebuild the web image. For native development, also set `PASSIT_API_ORIGIN=http://localhost:8000`; Compose supplies its own internal forwarding target.
 
-Load demo data (20 users, 40 listings, 15 bookings across every state). Sign in as `seed-01@passit.demo` to `seed-20@passit.demo` with password `passit-demo-2026`; the command also prints session tokens for scripts:
+Load demo data (22 users, 43 listings, 17 bookings across every state). Sign in as `seed-01@passit.demo` to `seed-22@passit.demo` with password `passit-demo-2026`; the command also prints session tokens for scripts:
 
 ```bash
 docker compose exec api python -m scripts.seed --reset

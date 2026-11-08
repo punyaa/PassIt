@@ -15,7 +15,7 @@ FastAPI backend owned across four streams:
 ```bash
 uv sync --project api --dev
 uv run --directory api alembic upgrade head
-uv run --directory api python -m scripts.seed --reset     # 20 users, 40 listings, 15 bookings
+uv run --directory api python -m scripts.seed --reset     # 22 users, 43 listings, 17 bookings
 uv run --directory api uvicorn app.main:app --reload --port 8000
 ```
 
@@ -80,7 +80,7 @@ Accounts use an email and password, stored as argon2id hashes (`app/auth/passwor
 
 A session is an HS256 JWT signed with `PASSIT_JWT_SECRET`, valid for 12 hours, delivered as the `passit_session` **httpOnly** cookie (`Secure` when `PASSIT_SESSION_COOKIE_SECURE=true`, which staging and demo set because CloudFront serves HTTPS). Domain routers only depend on `CurrentUser`, which also accepts `Authorization: Bearer <jwt>` for scripts and load tests. Outside `PASSIT_ENVIRONMENT=development` the API refuses to start with the default secret. Note the variable is `PASSIT_ENVIRONMENT`, not `PASSIT_ENV`.
 
-Seed accounts sign in as `seed-01@passit.demo` to `seed-20@passit.demo` with password `passit-demo-2026`.
+Seed accounts sign in as `seed-01@passit.demo` to `seed-22@passit.demo` with password `passit-demo-2026`.
 
 ## AWS hand-off
 

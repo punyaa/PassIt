@@ -32,7 +32,7 @@ class DemoItem(TypedDict):
 
 class DemoPerson(TypedDict):
     name: str
-    bio: str
+    bio: str | None
     mrt_station: str
 
 
