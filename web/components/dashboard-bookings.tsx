@@ -2,27 +2,59 @@
 
 import Link from "next/link";
 
-import type { Schemas } from "@/lib/api-client";
-import { useApi } from "@/lib/use-api";
+import { useAccountData } from "./account-data";
 
 import { BookingRow } from "./booking-summary";
-import { EmptyState, Spinner } from "./ui";
+import { Alert, Button, EmptyState, Spinner } from "./ui";
 
 /** Bookings that need the viewer to do something, newest first. */
-export function NeedsAction({ role }: { role: "borrower" | "lender" }) {
-  const bookings = useApi<Schemas["Booking"][]>(`/bookings?role=${role}`);
+export function NeedsAction({
+  role,
+  compact,
+}: {
+  role: "borrower" | "lender";
+  compact: boolean;
+}) {
+  const { rentals: bookings } = useAccountData();
   if (bookings.loading) return <Spinner />;
-  const pending = bookings.data?.filter((b) => b.available_actions.some((a) => a !== "review")) ?? [];
+  if (bookings.error)
+    return (
+      <Alert>
+        {bookings.error.message}
+        <Button onClick={bookings.reload} variant="secondary">
+          Try again
+        </Button>
+      </Alert>
+    );
+  const pending =
+    bookings.data?.filter(
+      (b) =>
+        b.viewer_role === role &&
+        b.available_actions.some((a) => a !== "review" && a !== "cancel"),
+    ) ?? [];
   return (
     <section className="space-y-3">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-xl font-extrabold">Needs your attention</h2>
-        <Link className="text-sm font-bold underline" href={`/bookings?role=${role}`}>
+        <h2 className="text-xl font-extrabold">
+          {compact
+            ? role === "borrower"
+              ? "Renting"
+              : "Lending"
+            : "Needs your attention"}
+        </h2>
+        <Link
+          className="text-sm font-bold underline"
+          href={`/bookings?role=${role}`}
+        >
           All bookings
         </Link>
       </div>
       {pending.length ? (
-        pending.map((booking) => <BookingRow booking={booking} key={booking.id} />)
+        (compact ? pending.slice(0, 2) : pending).map((booking) => (
+          <BookingRow booking={booking} key={booking.id} />
+        ))
+      ) : compact ? (
+        <p className="text-sm text-muted">You're all caught up.</p>
       ) : (
         <EmptyState title="You're all caught up" />
       )}

@@ -5,35 +5,32 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
 import { ApiError } from "@/lib/api-client";
-import { isPlusPlan, logIn, PLUS_PLAN_NAMES, signUp, type PlusPlan } from "@/lib/auth";
+import { logIn, signUp } from "@/lib/auth";
 
 import { useSession } from "./session";
 import { Alert, Button, Card, Field, Input } from "./ui";
 
 function useAfterSignIn() {
   const router = useRouter();
-  const params = useSearchParams();
-  const next = params.get("next");
-  const requested = params.get("plan");
-  const plan = isPlusPlan(requested) ? requested : undefined;
+  const next = useSearchParams().get("next");
   const { refresh } = useSession();
   return async () => {
     await refresh();
-    // A plan param means the user came from a Plus CTA: show them the membership
-    // they just got (signup) or let them confirm the switch (login).
-    if (next?.startsWith("/")) router.push(next);
-    else if (plan) router.push(`/membership?plan=${plan}`);
-    else router.push("/search");
+    router.push(
+      next?.startsWith("/") && !next.startsWith("//") ? next : "/home",
+    );
   };
 }
 
 function authMessage(error: unknown): string {
-  if (error instanceof ApiError && error.status === 401) return "That email and password don't match.";
+  if (error instanceof ApiError && error.status === 401)
+    return "That email and password don't match.";
   return error instanceof Error ? error.message : "Something went wrong.";
 }
 
 export function LoginForm() {
   const afterSignIn = useAfterSignIn();
+  const accountDeleted = useSearchParams().get("deleted") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string>();
@@ -55,10 +52,21 @@ export function LoginForm() {
 
   return (
     <div className="space-y-6">
+      {accountDeleted && (
+        <Alert tone="success">
+          Your account has been deleted and your personal details erased.
+        </Alert>
+      )}
       <Card>
         <form className="space-y-5" onSubmit={submit}>
           <Field label="Email">
-            <Input autoComplete="email" onChange={(e) => setEmail(e.target.value)} required type="email" value={email} />
+            <Input
+              autoComplete="email"
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              type="email"
+              value={email}
+            />
           </Field>
           <Field label="Password">
             <Input
@@ -85,19 +93,19 @@ export function LoginForm() {
   );
 }
 
-function useRequestedPlan(): PlusPlan | undefined {
-  const requested = useSearchParams().get("plan");
-  return isPlusPlan(requested) ? requested : undefined;
-}
-
 export function SignupForm() {
   const afterSignIn = useAfterSignIn();
-  const plan = useRequestedPlan();
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirm: "",
+  });
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
-  const update = (key: keyof typeof form) => (e: { target: { value: string } }) =>
-    setForm((current) => ({ ...current, [key]: e.target.value }));
+  const update =
+    (key: keyof typeof form) => (e: { target: { value: string } }) =>
+      setForm((current) => ({ ...current, [key]: e.target.value }));
   const mismatch = form.confirm.length > 0 && form.password !== form.confirm;
 
   async function submit(event: FormEvent) {
@@ -106,7 +114,7 @@ export function SignupForm() {
     setBusy(true);
     setError(undefined);
     try {
-      await signUp(form.name.trim(), form.email, form.password, plan);
+      await signUp(form.name.trim(), form.email, form.password);
       await afterSignIn();
     } catch (caught) {
       setError(authMessage(caught));
@@ -119,10 +127,22 @@ export function SignupForm() {
     <Card>
       <form className="space-y-5" onSubmit={submit}>
         <Field label="Display name" hint="Shown to people you rent with.">
-          <Input autoComplete="name" maxLength={60} onChange={update("name")} required value={form.name} />
+          <Input
+            autoComplete="name"
+            maxLength={60}
+            onChange={update("name")}
+            required
+            value={form.name}
+          />
         </Field>
         <Field label="Email">
-          <Input autoComplete="email" onChange={update("email")} required type="email" value={form.email} />
+          <Input
+            autoComplete="email"
+            onChange={update("email")}
+            required
+            type="email"
+            value={form.email}
+          />
         </Field>
         <Field label="Password" hint="At least 8 characters.">
           <Input
@@ -134,7 +154,10 @@ export function SignupForm() {
             value={form.password}
           />
         </Field>
-        <Field label="Confirm password" error={mismatch ? "Passwords don't match." : undefined}>
+        <Field
+          label="Confirm password"
+          error={mismatch ? "Passwords don't match." : undefined}
+        >
           <Input
             autoComplete="new-password"
             onChange={update("confirm")}
@@ -144,12 +167,12 @@ export function SignupForm() {
           />
         </Field>
         {error && <Alert>{error}</Alert>}
-        {plan && plan !== "saver" && (
-          <p className="rounded-xl bg-sand px-4 py-3 text-center text-sm font-bold">
-            Joining PassIt Plus as {PLUS_PLAN_NAMES[plan]} — simulated, no charge.
-          </p>
-        )}
-        <Button busy={busy} className="w-full" disabled={mismatch} type="submit">
+        <Button
+          busy={busy}
+          className="w-full"
+          disabled={mismatch}
+          type="submit"
+        >
           Create account
         </Button>
         <p className="text-center text-sm text-muted">

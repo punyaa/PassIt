@@ -1,6 +1,55 @@
 {
   "components": {
     "schemas": {
+      "AccountDeletionPreview": {
+        "additionalProperties": false,
+        "description": "What deleting the account would do right now.",
+        "properties": {
+          "allowed": {
+            "title": "Allowed",
+            "type": "boolean"
+          },
+          "listings_archived": {
+            "description": "Listings with rental history: archived, scrubbed.",
+            "title": "Listings Archived",
+            "type": "integer"
+          },
+          "listings_deleted": {
+            "description": "Listings never rented: deleted for good.",
+            "title": "Listings Deleted",
+            "type": "integer"
+          },
+          "open_rentals": {
+            "description": "Rentals still in progress; they block deletion.",
+            "title": "Open Rentals",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "allowed",
+          "open_rentals",
+          "listings_deleted",
+          "listings_archived"
+        ],
+        "title": "AccountDeletionPreview",
+        "type": "object"
+      },
+      "AccountDeletionRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "password": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "title": "AccountDeletionRequest",
+        "type": "object"
+      },
       "AvailabilityResponse": {
         "additionalProperties": false,
         "properties": {
@@ -524,6 +573,28 @@
       "CurrentUserResponse": {
         "additionalProperties": false,
         "properties": {
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
+          "bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio"
+          },
           "display_name": {
             "title": "Display Name",
             "type": "string"
@@ -545,7 +616,9 @@
         "required": [
           "user_id",
           "display_name",
-          "email"
+          "email",
+          "bio",
+          "avatar_url"
         ],
         "title": "CurrentUserResponse",
         "type": "object"
@@ -829,6 +902,14 @@
             "title": "Status",
             "type": "string"
           },
+          "thumbnail_urls": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Thumbnail Urls",
+            "type": "array"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -1059,6 +1140,14 @@
             "title": "Owner Review Count",
             "type": "integer"
           },
+          "photo_keys": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Photo Keys",
+            "type": "array"
+          },
           "photo_urls": {
             "default": [],
             "items": {
@@ -1113,6 +1202,14 @@
             "title": "Status",
             "type": "string"
           },
+          "thumbnail_urls": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Thumbnail Urls",
+            "type": "array"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -1135,6 +1232,19 @@
       "ListingUpdate": {
         "additionalProperties": false,
         "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "minLength": 2,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
           "condition": {
             "anyOf": [
               {
@@ -1174,6 +1284,44 @@
               }
             ],
             "title": "Description"
+          },
+          "mrt_station": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mrt Station"
+          },
+          "photo_keys": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 10,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Photo Keys"
+          },
+          "postal_code": {
+            "anyOf": [
+              {
+                "pattern": "^\\d{6}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postal Code"
           },
           "price_day": {
             "anyOf": [
@@ -1289,7 +1437,8 @@
             "enum": [
               "listing",
               "handover",
-              "return"
+              "return",
+              "avatar"
             ],
             "title": "Stage",
             "type": "string"
@@ -1306,6 +1455,361 @@
           "url"
         ],
         "title": "MediaRecord",
+        "type": "object"
+      },
+      "Meetup": {
+        "additionalProperties": false,
+        "properties": {
+          "available_actions": {
+            "items": {
+              "enum": [
+                "accept",
+                "counter",
+                "decline",
+                "cancel"
+              ],
+              "type": "string"
+            },
+            "title": "Available Actions",
+            "type": "array"
+          },
+          "awaiting_role": {
+            "anyOf": [
+              {
+                "enum": [
+                  "borrower",
+                  "lender"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Who must respond next; null once the meetup is no longer open.",
+            "title": "Awaiting Role"
+          },
+          "borrower_display_name": {
+            "title": "Borrower Display Name",
+            "type": "string"
+          },
+          "borrower_id": {
+            "format": "uuid",
+            "title": "Borrower Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/MeetupEvent"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "lender_display_name": {
+            "title": "Lender Display Name",
+            "type": "string"
+          },
+          "lender_id": {
+            "format": "uuid",
+            "title": "Lender Id",
+            "type": "string"
+          },
+          "listing_id": {
+            "format": "uuid",
+            "title": "Listing Id",
+            "type": "string"
+          },
+          "listing_title": {
+            "title": "Listing Title",
+            "type": "string"
+          },
+          "location": {
+            "title": "Location",
+            "type": "string"
+          },
+          "meet_at": {
+            "format": "date-time",
+            "title": "Meet At",
+            "type": "string"
+          },
+          "price": {
+            "title": "Price",
+            "type": "string"
+          },
+          "proposed_by": {
+            "format": "uuid",
+            "title": "Proposed By",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "accepted",
+              "declined",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "viewer_role": {
+            "enum": [
+              "borrower",
+              "lender"
+            ],
+            "title": "Viewer Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "listing_id",
+          "listing_title",
+          "borrower_id",
+          "borrower_display_name",
+          "lender_id",
+          "lender_display_name",
+          "status",
+          "meet_at",
+          "location",
+          "price",
+          "proposed_by",
+          "awaiting_role",
+          "viewer_role",
+          "available_actions",
+          "events",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "Meetup",
+        "type": "object"
+      },
+      "MeetupCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "listing_id": {
+            "format": "uuid",
+            "title": "Listing Id",
+            "type": "string"
+          },
+          "location": {
+            "description": "Where to meet.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Location",
+            "type": "string"
+          },
+          "meet_at": {
+            "description": "When to meet, as an ISO timestamp with an offset.",
+            "format": "date-time",
+            "title": "Meet At",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Offered price in SGD.",
+            "title": "Price"
+          }
+        },
+        "required": [
+          "meet_at",
+          "location",
+          "price",
+          "listing_id"
+        ],
+        "title": "MeetupCreate",
+        "type": "object"
+      },
+      "MeetupEvent": {
+        "additionalProperties": false,
+        "properties": {
+          "author_display_name": {
+            "title": "Author Display Name",
+            "type": "string"
+          },
+          "author_id": {
+            "format": "uuid",
+            "title": "Author Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "propose",
+              "counter",
+              "accept",
+              "decline",
+              "cancel"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "meet_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meet At"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          }
+        },
+        "required": [
+          "id",
+          "author_id",
+          "author_display_name",
+          "kind",
+          "created_at"
+        ],
+        "title": "MeetupEvent",
+        "type": "object"
+      },
+      "MeetupNote": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "title": "MeetupNote",
+        "type": "object"
+      },
+      "MeetupTerms": {
+        "additionalProperties": false,
+        "properties": {
+          "location": {
+            "description": "Where to meet.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Location",
+            "type": "string"
+          },
+          "meet_at": {
+            "description": "When to meet, as an ISO timestamp with an offset.",
+            "format": "date-time",
+            "title": "Meet At",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Offered price in SGD.",
+            "title": "Price"
+          }
+        },
+        "required": [
+          "meet_at",
+          "location",
+          "price"
+        ],
+        "title": "MeetupTerms",
         "type": "object"
       },
       "MembershipChange": {
@@ -1519,7 +2023,8 @@
             "enum": [
               "listing",
               "handover",
-              "return"
+              "return",
+              "avatar"
             ],
             "title": "Stage",
             "type": "string"
@@ -1643,6 +2148,114 @@
           "condition"
         ],
         "title": "PriceSuggestionRequest",
+        "type": "object"
+      },
+      "ProfileUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "avatar_key": {
+            "anyOf": [
+              {
+                "maxLength": 512,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Key"
+          },
+          "bio": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio"
+          },
+          "display_name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Display Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display_name"
+        ],
+        "title": "ProfileUpdate",
+        "type": "object"
+      },
+      "PublicProfile": {
+        "additionalProperties": false,
+        "properties": {
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
+          "bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "member_since": {
+            "format": "date-time",
+            "title": "Member Since",
+            "type": "string"
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating"
+          },
+          "review_count": {
+            "title": "Review Count",
+            "type": "integer"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name",
+          "bio",
+          "avatar_url",
+          "member_since",
+          "rating",
+          "review_count"
+        ],
+        "title": "PublicProfile",
         "type": "object"
       },
       "Review": {
@@ -1949,6 +2562,187 @@
           }
         ],
         "summary": "Get Current User",
+        "tags": [
+          "authentication"
+        ]
+      },
+      "patch": {
+        "operationId": "updateProfile",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUserResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Profile",
+        "tags": [
+          "authentication"
+        ]
+      }
+    },
+    "/v1/auth/me/delete": {
+      "post": {
+        "description": "Permanently delete the account. Requires the current password.",
+        "operationId": "deleteAccount",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountDeletionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "Wrong password"
+          },
+          "409": {
+            "description": "Rentals still in progress"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Account",
+        "tags": [
+          "authentication"
+        ]
+      }
+    },
+    "/v1/auth/me/deletion": {
+      "get": {
+        "description": "Tell the person exactly what deleting their account would do, before they confirm.",
+        "operationId": "previewAccountDeletion",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDeletionPreview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Preview Account Deletion",
         "tags": [
           "authentication"
         ]
@@ -2924,6 +3718,38 @@
           },
           {
             "in": "query",
+            "name": "owner_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Owner Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "newest",
+              "enum": [
+                "newest",
+                "price_asc",
+                "price_desc"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "min_price",
             "required": false,
             "schema": {
@@ -3515,6 +4341,70 @@
         ]
       }
     },
+    "/v1/listings/{listing_id}/manage": {
+      "get": {
+        "operationId": "getManagedListing",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "listing_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Listing Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListingDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Managed Listing",
+        "tags": [
+          "catalogue"
+        ]
+      }
+    },
     "/v1/media": {
       "post": {
         "description": "Attach an uploaded photo to one of your listings. Booking evidence is attached\nthrough the handover and return checklists instead.",
@@ -3642,6 +4532,576 @@
         "summary": "Presign Media Upload",
         "tags": [
           "media"
+        ]
+      }
+    },
+    "/v1/meetups": {
+      "get": {
+        "description": "The caller's meetups as borrower, lender or both, most recently updated first.",
+        "operationId": "listMeetups",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "borrower",
+                    "lender"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "accepted",
+                    "declined",
+                    "cancelled"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Meetup"
+                  },
+                  "title": "Response Listmeetups",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Meetups",
+        "tags": [
+          "meetups"
+        ]
+      },
+      "post": {
+        "description": "A borrower proposes a time, place and price to the lender of an active listing.",
+        "operationId": "createMeetup",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetupCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meetup"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "Proposing to meet about your own listing"
+          },
+          "404": {
+            "description": "Listing not found or not active"
+          },
+          "409": {
+            "description": "You already have an open proposal for this listing"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Meetup",
+        "tags": [
+          "meetups"
+        ]
+      }
+    },
+    "/v1/meetups/{meetup_id}": {
+      "get": {
+        "operationId": "getMeetup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meetup_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Meetup Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meetup"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Meetup",
+        "tags": [
+          "meetups"
+        ]
+      }
+    },
+    "/v1/meetups/{meetup_id}/accept": {
+      "post": {
+        "description": "Agree to the terms on the table. Both sides have now agreed: the meeting is scheduled.",
+        "operationId": "acceptMeetup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meetup_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Meetup Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/MeetupNote"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Note"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meetup"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Accept Meetup",
+        "tags": [
+          "meetups"
+        ]
+      }
+    },
+    "/v1/meetups/{meetup_id}/cancel": {
+      "post": {
+        "description": "Withdraw your own open offer, or call off a scheduled meeting before it happens.",
+        "operationId": "cancelMeetup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meetup_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Meetup Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/MeetupNote"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Note"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meetup"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Meetup",
+        "tags": [
+          "meetups"
+        ]
+      }
+    },
+    "/v1/meetups/{meetup_id}/counter": {
+      "post": {
+        "description": "Replace the terms on the table; the other person now has to respond.",
+        "operationId": "counterMeetup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meetup_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Meetup Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetupTerms"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meetup"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Counter Meetup",
+        "tags": [
+          "meetups"
+        ]
+      }
+    },
+    "/v1/meetups/{meetup_id}/decline": {
+      "post": {
+        "description": "Turn down the offer and close the negotiation.",
+        "operationId": "declineMeetup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meetup_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Meetup Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/MeetupNote"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Note"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meetup"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decline Meetup",
+        "tags": [
+          "meetups"
         ]
       }
     },
@@ -3947,6 +5407,219 @@
         "summary": "Create Review",
         "tags": [
           "reviews"
+        ]
+      }
+    },
+    "/v1/saved-listings": {
+      "get": {
+        "operationId": "listSavedListings",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Listing"
+                  },
+                  "title": "Response Listsavedlistings",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Saved Listings",
+        "tags": [
+          "catalogue"
+        ]
+      }
+    },
+    "/v1/saved-listings/{listing_id}": {
+      "delete": {
+        "operationId": "unsaveListing",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "listing_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Listing Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Unsave Listing",
+        "tags": [
+          "catalogue"
+        ]
+      },
+      "put": {
+        "operationId": "saveListing",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "listing_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Listing Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Save Listing",
+        "tags": [
+          "catalogue"
+        ]
+      }
+    },
+    "/v1/users/{user_id}": {
+      "get": {
+        "operationId": "getPublicProfile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProfile"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Public Profile",
+        "tags": [
+          "profiles"
         ]
       }
     }

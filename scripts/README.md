@@ -4,7 +4,7 @@
 - `loadtest/smoke.js`: Platform's quick `/health` check.
 - `loadtest/search.js`, `loadtest/booking.js` and `loadtest/evaluate.sh`: Platform's evaluation suite (search ramp, booking load, elasticity spike, fault recovery, cost). Run `AWS_PROFILE=nus-sso scripts/loadtest/evaluate.sh all pilot` for a quick pass or `full` for the report numbers. Results go to `loadtest/results/` (git-ignored).
 - Python tools that need the app's code live in `api/scripts/` and run with `uv run --directory api python -m scripts.<name>`:
-  - `seed`: deterministic demo data (B3). `--reset` wipes the database first.
+  - `seed`: deterministic demo data (B3), with bundled photos, lender bios, saved items and coherent rental history. `--reset` wipes the database first. Content and photo sources live in `api/scripts/demo/`; `seed-01@passit.demo` demonstrates both rental roles.
   - `contention_setup`: creates a listing plus N borrowers with tokens, as inputs for `contention.js` (B1).
   - `release_due_fees`: releases every fee whose hold period has ended; idempotent (B2).
 - `demo-reset/reset.sh <staging|demo>`: Platform's one-command reset. Runs the migration and seed as a one-off ECS task, then checks the site. Seed users sign in as `seed-01@passit.demo` to `seed-20@passit.demo` with password `passit-demo-2026`.
@@ -42,3 +42,7 @@ Pilot numbers from 2026-10-24 (2 API tasks, 0.25 vCPU each, through CloudFront):
 | Cost | Cost Explorer returned USD 0.00 for the last 7 days (billing data lags, and the account is linked), so cost per rental is still to be measured |
 
 These are pilot-scale numbers, not the report figures. Rerun with `full` after feature freeze.
+
+## Thumbnails
+
+`thumbnails/backfill.sh <staging|demo>` thumbnails listing photos uploaded before the thumbnailer existed, by invoking it once per photo. New uploads need nothing.

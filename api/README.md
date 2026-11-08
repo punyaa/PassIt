@@ -21,6 +21,8 @@ uv run --directory api uvicorn app.main:app --reload --port 8000
 
 The seed prints session tokens. Paste one into **Authorize** at <http://localhost:8000/docs> to call authenticated endpoints.
 
+The seed includes bundled listing photos, distinct descriptions and lender bios, saved items, paused listings and rental history dated relative to the reset day. `seed-01@passit.demo` demonstrates both borrowing and lending, including upcoming pickups and a return due. See [demo content](scripts/demo/README.md) for photo provenance and scenario details. Resetting does not download external images.
+
 ### Tests
 
 Database tests need PostgreSQL 16 because double-booking prevention lives in an exclusion constraint. The suite creates and migrates its own `passit_test` database:
@@ -76,7 +78,7 @@ Accounts use an email and password, stored as argon2id hashes (`app/auth/passwor
 | `POST /auth/signup` | Create an account (`email`, `password` of 8 to 128 characters, `display_name`) and start a session. `409` if the email is taken, ignoring case. |
 | `POST /auth/session` | Log in. The same `401` for a wrong password and an unknown email. |
 | `DELETE /auth/session` | Log out (clears the cookie). |
-| `GET /auth/me` | The signed-in user (`user_id`, `display_name`, `email`); `401` when signed out. |
+| `GET /auth/me` | The signed-in user (`user_id`, `display_name`, private `email`, `bio`, `avatar_url`); `401` when signed out. |
 
 A session is an HS256 JWT signed with `PASSIT_JWT_SECRET`, valid for 12 hours, delivered as the `passit_session` **httpOnly** cookie (`Secure` when `PASSIT_SESSION_COOKIE_SECURE=true`, which staging and demo set because CloudFront serves HTTPS). Domain routers only depend on `CurrentUser`, which also accepts `Authorization: Bearer <jwt>` for scripts and load tests. Outside `PASSIT_ENVIRONMENT=development` the API refuses to start with the default secret. Note the variable is `PASSIT_ENVIRONMENT`, not `PASSIT_ENV`.
 
@@ -91,6 +93,8 @@ Everything runs locally with no AWS account. Each AWS integration has a working 
 | Media storage, `integrations/storage.py` | API stores uploads in `PASSIT_LOCAL_MEDIA_DIR` through a signed, expiring, write-once PUT | `PASSIT_STORAGE_BACKEND=s3`, `PASSIT_S3_BUCKET`, optional `PASSIT_CLOUDFRONT_DOMAIN` | Bucket with public access blocked and CORS allowing PUT from the web origin; task role with `s3:PutObject` and `s3:GetObject` on the prefix; provision a CloudFront key pair and set `PASSIT_CLOUDFRONT_KEY_PAIR_ID` + `PASSIT_CLOUDFRONT_PRIVATE_KEY` so evidence URLs are signed |
 | Fee release, `integrations/scheduler.py` | In-process sweep every `PASSIT_LOCAL_RELEASE_SWEEP_SECONDS`; `python -m scripts.release_due_fees` | `PASSIT_SCHEDULER_BACKEND=eventbridge`, `PASSIT_RELEASE_LAMBDA_ARN`, `PASSIT_SCHEDULER_ROLE_ARN` | Lambda with handler `app.transactions.lambda_handler.handler` and RDS access; Scheduler role with `lambda:InvokeFunction`; task role with `scheduler:CreateSchedule` and `iam:PassRole`. Keep the sweep on as a safety net |
 | Price model, `integrations/llm.py` | Heuristic only | `PASSIT_BEDROCK_MODEL_ID` (IAM), or `PASSIT_LLM_API_URL` + `PASSIT_LLM_API_KEY` + `PASSIT_LLM_MODEL` for an OpenAI-compatible service | Enable the model in ap-southeast-1; task role with `bedrock:InvokeModel` |
+| Photo thumbnails, `integrations/storage.py` + `infra/lambdas/thumbnailer` | None: cards show the original photo | A Lambda, triggered by S3 when a listing photo is uploaded, writes `thumbs/listing/<user>/<id>.jpg` (longest side 640 px, no metadata). Listings return `thumbnail_urls` beside `photo_urls`; the website uses them for cards and falls back to the original if one is missing. Handover and return photos are never thumbnailed. | Terraform module `thumbnailer`, CloudFront route `/thumbs/*`, and an image pushed by CI. `scripts/thumbnails/backfill.sh` covers photos uploaded earlier. |
+| Email events, `integrations/notifications.py` + `infra/lambdas/mailer` | `PASSIT_NOTIFICATIONS_BACKEND=log`: one log line per event | `PASSIT_NOTIFICATIONS_BACKEND=sns` and `PASSIT_EVENTS_TOPIC_ARN` (Terraform sets both when `notifications_enabled` is true; off by default). Booking confirmed, handed over, returned, settled (with or without damage) and cancelled, and fee released, each go to the borrower and lender. | Terraform module `notifications`: SNS topic, mailer Lambda, SES identities. SES starts in sandbox mode, so each recipient must be verified once. The sender must be on a domain you control: a university or free-mail sender fails the receiver's DMARC check. Events are described in `app/notifications/events.py`. |
 | Geocoding, `integrations/onemap.py` | Public OneMap search (rate-limited without a token) | `PASSIT_ONEMAP_TOKEN` | Register for a OneMap token so planning-area lookups work and rate limits are higher |
 
 Set `PASSIT_FEE_HOLD_MINUTES=1` in staging so demos show a real release instead of a mocked one.
@@ -102,3 +106,9 @@ Set `PASSIT_FEE_HOLD_MINUTES=1` in staging so demos show a real release instead 
 - **Bedrock:** not enabled. `PASSIT_BEDROCK_MODEL_ID` is unset, so price suggestions use the heuristic. The task role already allows `bedrock:InvokeModel`.
 - **OneMap:** not exercised from AWS. Set `PASSIT_ONEMAP_TOKEN` for planning-area lookups.
 - **Evidence URLs** are signed CloudFront URLs once `PASSIT_CLOUDFRONT_KEY_PAIR_ID` and `PASSIT_CLOUDFRONT_PRIVATE_KEY` are set; until the key pair is provisioned on staging, media URLs stay unsigned (anyone holding a media key can read the photo).
+
+## Prototype enrichment
+
+Migration `0003` adds nullable profile bio/avatar fields, per-account saved listings and ordered listing photos. `PATCH /v1/auth/me` updates display name, bio and a user-owned avatar upload key; `GET /v1/users/{id}` exposes public identity and ratings without account email. Avatars use the existing upload API with stage `avatar` and JPEG/PNG files.
+
+`GET/PUT/DELETE /v1/saved-listings` (PUT/DELETE use `/{listing_id}`) manage private bookmarks. Search accepts `owner_id` and `sort=newest|price_asc|price_desc`. Owners load archived listings through `GET /v1/listings/{id}/manage`; public listing reads continue to exclude archived items. Listing PATCH supports category/location and ordered `photo_keys`; listing media edits leave booking evidence untouched.

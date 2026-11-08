@@ -11,105 +11,56 @@ prints session tokens for load tests.
 
 import argparse
 import asyncio
-import random
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from uuid import UUID
 
-from sqlalchemy import func, select, text
+import httpx
+from sqlalchemy import func, select, text, update
 
 from app.auth.dependencies import issue_access_token
 from app.auth.passwords import hash_password
-from app.catalogue.mrt_stations import STATIONS
+from app.core.config import get_settings
 from app.core.db import get_sessionmaker
-from app.models import Listing, User
-from scripts.inprocess import api_client, upload_placeholder
-
-NAMES = [
-    "Aisha Rahman", "Ben Tan", "Chloe Lim", "Daniel Ng", "Elena Koh", "Farhan Ismail",
-    "Grace Wong", "Hari Kumar", "Isabel Chua", "Jun Wei Lee", "Kavya Menon", "Liam Goh",
-    "Mei Ling Teo", "Nur Aisyah", "Oliver Sim", "Priya Nair", "Qi Hui Ong", "Ravi Pillai",
-    "Sofia Yeo", "Tom Chan",
-]  # fmt: skip
-
-# title, category, condition, day, week (or None), month (or None), deposit
-ITEMS = [
-    ("4-person camping tent", "Outdoor", "Good", 12, 50, 150, 80),
-    ("Hiking backpack 65L", "Outdoor", "Like new", 8, 35, None, 60),
-    ("Portable camping stove", "Outdoor", "Good", 6, 25, None, 40),
-    ("Snorkelling set", "Outdoor", "Fair", 5, 20, None, 30),
-    ("Kayak with paddles", "Outdoor", "Good", 35, 150, None, 300),
-    ("Folding picnic table", "Outdoor", "Good", 7, 30, 80, 40),
-    ("Party speaker with mic", "Events", "Like new", 25, 100, None, 150),
-    ("Fairy lights 20m", "Events", "Good", 5, 20, None, 20),
-    ("Chafing dish set", "Events", "Good", 15, 60, None, 60),
-    ("Popcorn machine", "Events", "Fair", 18, 70, None, 80),
-    ("Photo booth backdrop", "Events", "Good", 12, 45, None, 50),
-    ("Folding chairs (10)", "Events", "Good", 20, 80, 220, 100),
-    ("Cordless drill set", "Tools", "Good", 9, 35, 100, 70),
-    ("Pressure washer", "Tools", "Like new", 22, 90, None, 150),
-    ("Ladder 3m", "Tools", "Good", 8, 30, 90, 50),
-    ("Stud finder and laser level", "Tools", "Good", 6, 24, None, 40),
-    ("Carpet cleaner", "Tools", "Fair", 20, 80, None, 120),
-    ("Sewing machine", "Tools", "Good", 12, 48, 140, 120),
-    ("Baby stroller", "Baby & kids", "Good", 10, 40, 120, 100),
-    ("Travel cot", "Baby & kids", "Like new", 8, 32, 90, 60),
-    ("Car seat (0-4 years)", "Baby & kids", "Good", 9, 36, 100, 90),
-    ("Kids bicycle 16 inch", "Baby & kids", "Fair", 6, 24, 70, 50),
-    ("Baby carrier", "Baby & kids", "Good", 5, 20, 60, 50),
-    ("Ride-on toy car", "Baby & kids", "Good", 10, 40, None, 80),
-    ("Fujifilm camera kit", "Electronics", "Like new", 28, 120, None, 400),
-    ("Portable projector", "Electronics", "Good", 22, 90, 250, 250),
-    ("Nintendo Switch with games", "Electronics", "Good", 15, 60, 170, 250),
-    ("DJI drone", "Electronics", "Like new", 45, 190, None, 600),
-    ("GoPro action camera", "Electronics", "Good", 18, 75, 210, 250),
-    ("VR headset", "Electronics", "Good", 25, 100, None, 350),
-    ("Stand mixer", "Home", "Good", 12, 48, None, 150),
-    ("Air fryer XL", "Home", "Like new", 8, 30, 85, 80),
-    ("Dehumidifier", "Home", "Good", 7, 28, 80, 90),
-    ("Steam iron station", "Home", "Good", 6, 24, None, 60),
-    ("Raclette grill", "Home", "Like new", 10, 40, None, 70),
-    ("Bread maker", "Home", "Good", 8, 30, None, 70),
-    ("Electric scooter", "Mobility", "Good", 20, 85, 240, 300),
-    ("Foldable bicycle", "Mobility", "Good", 15, 60, 170, 250),
-    ("Roof box for car", "Mobility", "Fair", 18, 70, None, 150),
-    ("Luggage set (3 pieces)", "Travel", "Good", 10, 40, 110, 120),
-]  # fmt: skip
-
-# Final state for each of the 15 bookings.
-BOOKING_PLAN = (
-    ["confirmed"] * 3
-    + ["handed_over"] * 3
-    + ["returned"] * 2
-    + ["settled"] * 3
-    + ["damaged"] * 2
-    + ["cancelled"] * 2
+from app.models import (
+    Booking,
+    Checklist,
+    LedgerEntry,
+    Listing,
+    Media,
+    Review,
+    User,
+    inclusive_range,
 )
+from app.transactions.release import handle_release
+from scripts.demo_data import BOOKING_PLAN, DEMO_ROOT, ITEMS, PEOPLE, DemoItem, DemoScenario
+from scripts.inprocess import api_client, upload_bytes
+
+DEMO_PASSWORD = "passit-demo-2026"
 
 
 async def reset() -> None:
     async with get_sessionmaker()() as db:
         await db.execute(
             text(
-                "TRUNCATE reviews, checklists, media, ledger_entries, bookings, "
-                "availability, listings, users CASCADE"
+                "TRUNCATE meetup_events, meetups, saved_listings, reviews, checklists, media, "
+                "ledger_entries, bookings, availability, listings, users CASCADE"
             )
         )
         await db.commit()
 
 
-DEMO_PASSWORD = "passit-demo-2026"
-
-
-async def create_users() -> list[UUID]:
+async def create_users(today: date) -> list[UUID]:
     password_hash = hash_password(DEMO_PASSWORD)  # one hash for all 20 accounts
     async with get_sessionmaker()() as db:
         users = [
             User(
                 email=f"seed-{index:02d}@passit.demo",
                 password_hash=password_hash,
-                display_name=name,
+                display_name=person["name"],
+                bio=person["bio"],
+                created_at=datetime.combine(today, time(9), UTC) - timedelta(days=180 + index * 12),
             )
-            for index, name in enumerate(NAMES, start=1)
+            for index, person in enumerate(PEOPLE, start=1)
         ]
         db.add_all(users)
         await db.commit()
@@ -120,96 +71,221 @@ def auth(user_id: UUID) -> dict[str, str]:
     return {"authorization": f"Bearer {issue_access_token(user_id, timedelta(days=30))}"}
 
 
-async def run(rng: random.Random) -> None:
-    user_ids = await create_users()
+async def upload_item_photo(
+    client: httpx.AsyncClient, user_id: UUID, stage: str, item: DemoItem, position: int
+) -> str:
+    photo = item["photos"][min(position, len(item["photos"]) - 1)]
+    data = (DEMO_ROOT / "media" / photo["file"]).read_bytes()
+    return await upload_bytes(client, auth(user_id), stage, data, "image/jpeg")
+
+
+async def run() -> None:
+    today = date.today()
+    user_ids = await create_users(today)
+    listings: dict[str, tuple[UUID, UUID, DemoItem]] = {}
     async with api_client() as client:
-        listings = []
-        for index, (title, category, condition, day, week, month, deposit) in enumerate(ITEMS):
-            owner = user_ids[index % len(user_ids)]  # two listings per user
-            station = rng.choice(STATIONS)
+        for index, item in enumerate(ITEMS):
+            owner = user_ids[item["owner"]]  # two related listings per user
+            photos = [
+                await upload_item_photo(client, owner, "listing", item, position)
+                for position in range(len(item["photos"]))
+            ]
             payload = {
-                "title": title,
-                "description": f"{condition} {title.lower()}, available for pickup near "
-                f"{station.name} MRT.",
-                "category": category,
-                "condition": condition,
-                "price_day": str(day),
-                "price_week": str(week) if week else None,
-                "price_month": str(month) if month else None,
-                "deposit": str(deposit),
-                "mrt_station": station.name,
-                # No listing photos: cards fall back to a category illustration. Seeded
-                # handovers and returns still upload placeholder evidence.
+                key: item[key]
+                for key in (
+                    "title",
+                    "description",
+                    "category",
+                    "condition",
+                    "price_day",
+                    "price_week",
+                    "price_month",
+                    "deposit",
+                    "mrt_station",
+                )
             }
+            payload["availability"] = [
+                {
+                    "start_date": (today - timedelta(days=60)).isoformat(),
+                    "end_date": (today + timedelta(days=365)).isoformat(),
+                }
+            ]
+            # Bundled listing photos use the real upload flow. Seeded handovers and
+            # returns upload separate copies as condition evidence.
+            payload["photo_keys"] = photos
             response = await client.post("/listings", json=payload, headers=auth(owner))
             response.raise_for_status()
-            listings.append((response.json(), owner))
+            listing_id = UUID(response.json()["id"])
+            listings[item["slug"]] = listing_id, owner, item
+            async with get_sessionmaker()() as db:
+                created = datetime.combine(today, time(10), UTC) - timedelta(days=45 + index)
+                await db.execute(
+                    update(Listing).where(Listing.id == listing_id).values(created_at=created)
+                )
+                await db.execute(
+                    update(Media).where(Media.listing_id == listing_id).values(created_at=created)
+                )
+                await db.commit()
 
-        for index, final_state in enumerate(BOOKING_PLAN):
-            listing, owner = listings[index * 2 + 1]
-            borrower = rng.choice([u for u in user_ids if u != owner])
-            start = date.today() + timedelta(days=rng.randint(3, 40))
+        for scenario in BOOKING_PLAN:
+            listing_id, owner, item = listings[scenario["item"]]
+            borrower = user_ids[scenario["borrower"]]
+            # Production rejects past bookings. Build a real rental of the same duration
+            # first, then date the completed fixture consistently in historical_time().
+            start = today + timedelta(days=max(0, scenario["start"]))
             response = await client.post(
                 "/bookings",
                 json={
-                    "listing_id": listing["id"],
+                    "listing_id": str(listing_id),
                     "start_date": start.isoformat(),
-                    "end_date": (start + timedelta(days=rng.randint(1, 5))).isoformat(),
+                    "end_date": (
+                        start + timedelta(days=scenario["end"] - scenario["start"])
+                    ).isoformat(),
                     "duration_type": "day",
                 },
                 headers=auth(borrower),
             )
             response.raise_for_status()
-            booking_id = response.json()["id"]
-            await advance(client, booking_id, final_state, auth(owner), auth(borrower), rng)
+            booking_id = UUID(response.json()["id"])
+            await advance(client, booking_id, scenario, item, owner, borrower)
+            await historical_time(booking_id, scenario, today)
+
+        for user_index, slugs in (
+            (0, ["projector", "mixer", "luggage"]),
+            (1, ["tent", "speaker", "vr"]),
+            (2, ["backpack", "sewing"]),
+        ):
+            for slug in slugs:
+                response = await client.put(
+                    f"/saved-listings/{listings[slug][0]}", headers=auth(user_ids[user_index])
+                )
+                response.raise_for_status()
+        # Pause after scenarios are created, keeping the real public-availability rule.
+        for item in ITEMS:
+            if item["status"] == "paused":
+                response = await client.patch(
+                    f"/listings/{listings[item['slug']][0]}",
+                    json={"status": "paused"},
+                    headers=auth(user_ids[item["owner"]]),
+                )
+                response.raise_for_status()
 
     async with get_sessionmaker()() as db:
         listing_count = await db.scalar(select(func.count()).select_from(Listing))
     print(f"Seeded {len(user_ids)} users, {listing_count} listings, {len(BOOKING_PLAN)} bookings.")
     print(f"Demo logins: seed-01@passit.demo ... seed-20@passit.demo, password {DEMO_PASSWORD}")
     print("Session tokens (valid 30 days) for the demo:")
-    for user_id, name in list(zip(user_ids, NAMES, strict=True))[:3]:
-        print(f"  {name:<14} {auth(user_id)['authorization']}")
+    for user_id, person in list(zip(user_ids, PEOPLE, strict=True))[:3]:
+        print(f"  {person['name']:<14} {auth(user_id)['authorization']}")
 
 
-async def advance(client, booking_id, final_state, lender, borrower, rng) -> None:  # noqa: ANN001
-    async def checklist(path: str, headers: dict, stage: str) -> None:
-        key = await upload_placeholder(client, headers, stage)
+async def advance(
+    client: httpx.AsyncClient,
+    booking_id: UUID,
+    scenario: DemoScenario,
+    item: DemoItem,
+    owner: UUID,
+    borrower: UUID,
+) -> None:
+    final_state = scenario["state"]
+
+    async def checklist(path: str, user_id: UUID, stage: str) -> None:
+        key = await upload_item_photo(client, user_id, stage, item, 0 if stage == "handover" else 1)
         items = [
-            {"label": "Item clean and complete", "checked": True},
-            {"label": "No visible damage", "checked": stage == "handover" or rng.random() > 0.3},
+            {"label": item["check"], "checked": True},
+            {"label": "Condition and existing wear checked together", "checked": True},
         ]
         response = await client.post(
             f"/bookings/{booking_id}/{path}",
             json={"items": items, "media_keys": [key]},
-            headers=headers,
+            headers=auth(user_id),
         )
         response.raise_for_status()
 
-    async def post(path: str, headers: dict, body: dict | None = None) -> None:
-        response = await client.post(f"/bookings/{booking_id}/{path}", json=body, headers=headers)
+    async def post(path: str, user_id: UUID, body: dict[str, str] | None) -> None:
+        response = await client.post(
+            f"/bookings/{booking_id}/{path}", json=body, headers=auth(user_id)
+        )
         response.raise_for_status()
 
     if final_state == "cancelled":
-        await post("cancel", borrower)
+        await post("cancel", borrower, None)
         return
     if final_state == "confirmed":
         return
-    await checklist("handover", lender, "handover")
+    await checklist("handover", owner, "handover")
     if final_state == "handed_over":
         return
     await checklist("return", borrower, "return")
     if final_state == "returned":
         return
     if final_state == "damaged":
-        severity = rng.choice(["minor", "moderate"])
-        await post("damage", lender, {"severity": severity, "notes": "Scuffs on the casing"})
+        await post("damage", owner, {"severity": scenario["severity"], "notes": scenario["damage"]})
     else:
-        await post("settle", lender)
-    for author in (borrower, lender):
-        review = {"booking_id": booking_id, "rating": rng.randint(4, 5), "comment": "Smooth rental"}
-        response = await client.post("/reviews", json=review, headers=author)
+        await post("settle", owner, None)
+    for author, comment in ((borrower, scenario["review"]), (owner, scenario["lender_review"])):
+        review = {
+            "booking_id": str(booking_id),
+            "rating": 4 if final_state == "damaged" else 5,
+            "comment": comment,
+        }
+        response = await client.post("/reviews", json=review, headers=auth(author))
         response.raise_for_status()
+
+
+async def historical_time(booking_id: UUID, scenario: DemoScenario, today: date) -> None:
+    """Backdate this demo fixture only; never change application validation or money amounts."""
+    start = today + timedelta(days=scenario["start"])
+    end = today + timedelta(days=scenario["end"])
+    created = datetime.combine(
+        min(start - timedelta(days=5), today - timedelta(days=2)), time(9), UTC
+    )
+    handover = datetime.combine(start, time(10), UTC)
+    returned = datetime.combine(end, time(18), UTC)
+    settled = returned + timedelta(hours=1)
+    cancelled = created + timedelta(hours=2)
+    async with get_sessionmaker()() as db:
+        booking = await db.get(Booking, booking_id)
+        booking.period = inclusive_range(start, end)
+        booking.created_at = created
+        if booking.handed_over_at is not None:
+            booking.handed_over_at = handover
+            booking.fee_release_at = handover + timedelta(minutes=get_settings().fee_hold_minutes)
+        if booking.returned_at is not None:
+            booking.returned_at = returned
+        if booking.settled_at is not None:
+            booking.settled_at = settled
+        if booking.cancelled_at is not None:
+            booking.cancelled_at = cancelled
+        for row in await db.scalars(select(Checklist).where(Checklist.booking_id == booking_id)):
+            row.signed_at = handover if row.stage == "handover" else returned
+        for row in await db.scalars(select(Media).where(Media.booking_id == booking_id)):
+            row.created_at = handover if row.stage == "handover" else returned
+        for row in await db.scalars(select(Review).where(Review.booking_id == booking_id)):
+            row.created_at = settled + timedelta(hours=1)
+        for row in await db.scalars(
+            select(LedgerEntry).where(LedgerEntry.booking_id == booking_id)
+        ):
+            if row.entry_type in ("refund_deposit", "damage_payout"):
+                row.created_at = settled
+            elif booking.state == "cancelled" and (
+                (row.account == "borrower" and row.amount > 0)
+                or (row.account == "platform_hold" and row.amount < 0)
+            ):
+                row.created_at = cancelled
+            else:
+                row.created_at = created
+        await db.commit()
+    # Use the normal idempotent release service for fees whose historical hold has ended.
+    await handle_release(booking_id)
+    async with get_sessionmaker()() as db:
+        booking = await db.get(Booking, booking_id)
+        await db.execute(
+            update(LedgerEntry)
+            .where(LedgerEntry.booking_id == booking_id, LedgerEntry.entry_type == "release_fee")
+            .values(created_at=booking.fee_release_at)
+        )
+        await db.commit()
 
 
 async def main() -> None:
@@ -222,7 +298,7 @@ async def main() -> None:
         async with get_sessionmaker()() as db:
             if await db.scalar(select(func.count()).select_from(User)):
                 raise SystemExit("Database is not empty. Re-run with --reset to replace it.")
-    await run(random.Random(5224))
+    await run()
 
 
 if __name__ == "__main__":

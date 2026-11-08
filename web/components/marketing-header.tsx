@@ -14,7 +14,6 @@ export function MarketingHeader() {
           <Link href="#how-it-works">How it works</Link>
         </nav>
         <div className="flex items-center gap-3">
-          <Link className="whitespace-nowrap text-sm font-bold text-orange-deep" href="/plus">👑 Become Plus</Link>
           <Link className="text-sm font-bold" href={applicationUrl("/login")}>Log in</Link>
           <Link className="whitespace-nowrap rounded-xl bg-forest px-4 py-3 text-sm font-bold text-white" href={applicationUrl("/listings/new")}>
             + List<span className="hidden sm:inline"> an item</span>

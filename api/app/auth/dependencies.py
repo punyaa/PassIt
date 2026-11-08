@@ -50,7 +50,8 @@ async def current_user(
     if not token:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Sign in required")
     user = await db.get(User, _user_id_from_token(token))
-    if user is None:
+    # A deleted account's unexpired tokens stop working at once.
+    if user is None or user.deleted_at is not None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Unknown user")
     return user
 

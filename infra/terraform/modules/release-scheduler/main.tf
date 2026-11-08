@@ -123,3 +123,34 @@ resource "aws_iam_role_policy" "scheduler_invoke" {
     }]
   })
 }
+
+# The function has no route to SNS, so it cannot publish its fee.released event itself. It
+# returns the event in its result instead, and Lambda delivers the successful result to the
+# events topic for the mailer. Needs the topic ARN only at apply time, hence the separate flag.
+resource "aws_lambda_function_event_invoke_config" "release" {
+  count = var.image_tag != null && var.forward_results ? 1 : 0
+
+  function_name = aws_lambda_function.release[0].function_name
+
+  destination_config {
+    on_success {
+      destination = var.results_topic_arn
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "forward_results" {
+  count = var.forward_results ? 1 : 0
+
+  name = "forward-results"
+  role = aws_iam_role.lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["sns:Publish"]
+      Resource = var.results_topic_arn
+    }]
+  })
+}

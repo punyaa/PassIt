@@ -26,7 +26,11 @@ export function Button({
   ...props
 }: ComponentProps<"button"> & { variant?: Variant; busy?: boolean }) {
   return (
-    <button className={buttonClass(variant, className)} disabled={disabled || busy} {...props}>
+    <button
+      className={buttonClass(variant, className)}
+      disabled={disabled || busy}
+      {...props}
+    >
       {busy && <Spinner />}
       {children}
     </button>
@@ -42,7 +46,12 @@ export function LinkButton({
 }
 
 export function Card({ className = "", ...props }: ComponentProps<"div">) {
-  return <div className={`rounded-card border border-line bg-white p-6 ${className}`} {...props} />;
+  return (
+    <div
+      className={`rounded-card border border-line bg-white p-5 sm:p-6 ${className}`}
+      {...props}
+    />
+  );
 }
 
 export function PageHeader({
@@ -60,10 +69,16 @@ export function PageHeader({
     <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
         {eyebrow && (
-          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-orange-deep">{eyebrow}</p>
+          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-orange-deep">
+            {eyebrow}
+          </p>
         )}
-        <h1 className="mt-2 text-4xl font-extrabold tracking-[-0.045em] lg:text-5xl">{title}</h1>
-        {description && <p className="mt-3 max-w-2xl leading-7 text-muted">{description}</p>}
+        <h1 className="mt-2 text-3xl font-extrabold tracking-[-0.045em] sm:text-4xl">
+          {title}
+        </h1>
+        {description && (
+          <p className="mt-3 max-w-2xl leading-7 text-muted">{description}</p>
+        )}
       </div>
       {actions && <div className="flex flex-wrap gap-3">{actions}</div>}
     </div>
@@ -85,8 +100,14 @@ export function Field({
     <label className="block">
       <span className="text-sm font-extrabold">{label}</span>
       <div className="mt-2">{children}</div>
-      {hint && !error && <span className="mt-1 block text-xs text-muted">{hint}</span>}
-      {error && <span className="mt-1 block text-xs font-bold text-danger">{error}</span>}
+      {hint && !error && (
+        <span className="mt-1 block text-xs text-muted">{hint}</span>
+      )}
+      {error && (
+        <span className="mt-1 block text-xs font-bold text-danger">
+          {error}
+        </span>
+      )}
     </label>
   );
 }
@@ -102,7 +123,10 @@ export function Select({ className = "", ...props }: ComponentProps<"select">) {
   return <select className={`${control} ${className}`} {...props} />;
 }
 
-export function Textarea({ className = "", ...props }: ComponentProps<"textarea">) {
+export function Textarea({
+  className = "",
+  ...props
+}: ComponentProps<"textarea">) {
   return <textarea className={`${control} min-h-28 ${className}`} {...props} />;
 }
 
@@ -116,9 +140,17 @@ const tones: Record<Tone, string> = {
   info: "bg-info-soft text-[#2c5a78]",
 };
 
-export function Badge({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
+export function Badge({
+  tone = "neutral",
+  children,
+}: {
+  tone?: Tone;
+  children: ReactNode;
+}) {
   return (
-    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-extrabold ${tones[tone]}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-extrabold ${tones[tone]}`}
+    >
       {children}
     </span>
   );
@@ -134,7 +166,10 @@ export function Alert({
   children?: ReactNode;
 }) {
   return (
-    <div role={tone === "danger" ? "alert" : "status"} className={`rounded-xl px-4 py-3 text-sm ${tones[tone]}`}>
+    <div
+      role={tone === "danger" ? "alert" : "status"}
+      className={`rounded-xl px-4 py-3 text-sm ${tones[tone]}`}
+    >
       {title && <strong className="block">{title}</strong>}
       {children}
     </div>
@@ -143,26 +178,47 @@ export function Alert({
 
 export function Spinner({ label }: { label?: string }) {
   return (
-    <span className="inline-flex items-center gap-2 text-sm text-muted" role="status">
+    <span
+      className="inline-flex items-center gap-2 text-sm text-muted"
+      role="status"
+    >
       <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
       {label}
     </span>
   );
 }
 
-export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
+export function EmptyState({
+  title,
+  children,
+}: {
+  title: string;
+  children?: ReactNode;
+}) {
   return (
     <div className="rounded-card border border-dashed border-[#b9cdbf] bg-white p-10 text-center">
       <strong className="text-lg">{title}</strong>
-      {children && <div className="mt-2 text-sm leading-6 text-muted">{children}</div>}
+      {children && (
+        <div className="mt-2 text-sm leading-6 text-muted">{children}</div>
+      )}
     </div>
   );
 }
 
-export function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
+export function Stat({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: ReactNode;
+  hint?: string;
+}) {
   return (
     <Card>
-      <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-muted">{label}</p>
+      <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-muted">
+        {label}
+      </p>
       <p className="mt-3 text-3xl font-extrabold tracking-[-0.04em]">{value}</p>
       {hint && <p className="mt-1 text-xs text-muted">{hint}</p>}
     </Card>

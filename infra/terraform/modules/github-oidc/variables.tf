@@ -40,3 +40,9 @@ variable "lambda_function_arns" {
   type        = list(string)
   default     = []
 }
+
+variable "subject_prefix" {
+  description = "Prefix of the token's sub claim. Check the repository with `gh api repos/<owner>/<repo>/actions/oidc/customization/sub`: when use_immutable_subject is true, use its sub_claim_prefix. Null falls back to the older repo:<owner>/<repo> form."
+  type        = string
+  default     = null
+}

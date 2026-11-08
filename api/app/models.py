@@ -8,7 +8,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, SmallInteger, Text, text
+from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, SmallInteger, Text, text
 from sqlalchemy.dialects.postgresql import DATERANGE, ENUM, JSONB, Range
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -33,6 +33,9 @@ ledger_type = ENUM(
     create_type=False,
 )
 media_stage = ENUM("listing", "handover", "return", name="media_stage", create_type=False)
+meetup_status = ENUM(
+    "pending", "accepted", "declined", "cancelled", name="meetup_status", create_type=False
+)
 
 Money = Numeric(10, 2)
 UUID_DEFAULT = text("uuid_generate_v4()")
@@ -53,7 +56,10 @@ class User(Base):
     email: Mapped[str] = mapped_column(Text)
     password_hash: Mapped[str] = mapped_column(Text)
     display_name: Mapped[str] = mapped_column(Text)
+    bio: Mapped[str | None] = mapped_column(Text)
+    avatar_key: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(server_default=NOW)
+    deleted_at: Mapped[datetime | None]
 
 
 # --- B3 Catalogue ------------------------------------------------------------
@@ -89,6 +95,7 @@ class Media(Base):
     uploaded_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
     stage: Mapped[str] = mapped_column(media_stage)
     s3_key: Mapped[str] = mapped_column(Text)
+    position: Mapped[int] = mapped_column(Integer, server_default=text("0"))
     created_at: Mapped[datetime] = mapped_column(server_default=NOW)
 
 
@@ -197,6 +204,47 @@ class PaymentOperation(Base):
     idempotency_key: Mapped[str] = mapped_column(Text, unique=True)
     provider_reference: Mapped[str] = mapped_column(Text, unique=True)
     failure_code: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(server_default=NOW)
+
+
+class SavedListing(Base):
+    __tablename__ = "saved_listings"
+
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    listing_id: Mapped[UUID] = mapped_column(ForeignKey("listings.id"), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(server_default=NOW)
+
+
+# --- Meetups -----------------------------------------------------------------
+
+
+class Meetup(Base):
+    __tablename__ = "meetups"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=UUID_DEFAULT)
+    listing_id: Mapped[UUID] = mapped_column(ForeignKey("listings.id"))
+    borrower_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    lender_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    status: Mapped[str] = mapped_column(meetup_status, server_default=text("'pending'"))
+    meet_at: Mapped[datetime]
+    location: Mapped[str] = mapped_column(Text)
+    price: Mapped[Decimal] = mapped_column(Money)
+    proposed_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(server_default=NOW)
+    updated_at: Mapped[datetime] = mapped_column(server_default=NOW)
+
+
+class MeetupEvent(Base):
+    __tablename__ = "meetup_events"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=UUID_DEFAULT)
+    meetup_id: Mapped[UUID] = mapped_column(ForeignKey("meetups.id"))
+    author_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    kind: Mapped[str] = mapped_column(Text)
+    meet_at: Mapped[datetime | None]
+    location: Mapped[str | None] = mapped_column(Text)
+    price: Mapped[Decimal | None] = mapped_column(Money)
+    message: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(server_default=NOW)
 
 

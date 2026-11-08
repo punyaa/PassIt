@@ -38,6 +38,47 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /** Update Profile */
+        patch: operations["updateProfile"];
+        trace?: never;
+    };
+    "/v1/auth/me/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Account
+         * @description Permanently delete the account. Requires the current password.
+         */
+        post: operations["deleteAccount"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/me/deletion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview Account Deletion
+         * @description Tell the person exactly what deleting their account would do, before they confirm.
+         */
+        get: operations["previewAccountDeletion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
         patch?: never;
         trace?: never;
     };
@@ -404,6 +445,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/listings/{listing_id}/manage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Managed Listing */
+        get: operations["getManagedListing"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/media": {
         parameters: {
             query?: never;
@@ -441,6 +499,127 @@ export interface paths {
          *     or to a handover/return checklist (`media_keys`).
          */
         post: operations["presignMediaUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/meetups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Meetups
+         * @description The caller's meetups as borrower, lender or both, most recently updated first.
+         */
+        get: operations["listMeetups"];
+        put?: never;
+        /**
+         * Create Meetup
+         * @description A borrower proposes a time, place and price to the lender of an active listing.
+         */
+        post: operations["createMeetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/meetups/{meetup_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Meetup */
+        get: operations["getMeetup"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/meetups/{meetup_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Meetup
+         * @description Agree to the terms on the table. Both sides have now agreed: the meeting is scheduled.
+         */
+        post: operations["acceptMeetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/meetups/{meetup_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Meetup
+         * @description Withdraw your own open offer, or call off a scheduled meeting before it happens.
+         */
+        post: operations["cancelMeetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/meetups/{meetup_id}/counter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Counter Meetup
+         * @description Replace the terms on the table; the other person now has to respond.
+         */
+        post: operations["counterMeetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/meetups/{meetup_id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decline Meetup
+         * @description Turn down the offer and close the negotiation.
+         */
+        post: operations["declineMeetup"];
         delete?: never;
         options?: never;
         head?: never;
@@ -513,10 +692,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/saved-listings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Saved Listings */
+        get: operations["listSavedListings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/saved-listings/{listing_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Save Listing */
+        put: operations["saveListing"];
+        post?: never;
+        /** Unsave Listing */
+        delete: operations["unsaveListing"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Public Profile */
+        get: operations["getPublicProfile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AccountDeletionPreview
+         * @description What deleting the account would do right now.
+         */
+        AccountDeletionPreview: {
+            /** Allowed */
+            allowed: boolean;
+            /**
+             * Listings Archived
+             * @description Listings with rental history: archived, scrubbed.
+             */
+            listings_archived: number;
+            /**
+             * Listings Deleted
+             * @description Listings never rented: deleted for good.
+             */
+            listings_deleted: number;
+            /**
+             * Open Rentals
+             * @description Rentals still in progress; they block deletion.
+             */
+            open_rentals: number;
+        };
+        /** AccountDeletionRequest */
+        AccountDeletionRequest: {
+            /** Password */
+            password: string;
+        };
         /** AvailabilityResponse */
         AvailabilityResponse: {
             /**
@@ -745,6 +1004,10 @@ export interface components {
         };
         /** CurrentUserResponse */
         CurrentUserResponse: {
+            /** Avatar Url */
+            avatar_url: string | null;
+            /** Bio */
+            bio: string | null;
             /** Display Name */
             display_name: string;
             /** Email */
@@ -884,6 +1147,11 @@ export interface components {
              * @enum {string}
              */
             status: "active" | "paused" | "archived";
+            /**
+             * Thumbnail Urls
+             * @default []
+             */
+            thumbnail_urls: string[];
             /** Title */
             title: string;
         };
@@ -952,6 +1220,11 @@ export interface components {
              */
             owner_review_count: number;
             /**
+             * Photo Keys
+             * @default []
+             */
+            photo_keys: string[];
+            /**
              * Photo Urls
              * @default []
              */
@@ -969,17 +1242,30 @@ export interface components {
              * @enum {string}
              */
             status: "active" | "paused" | "archived";
+            /**
+             * Thumbnail Urls
+             * @default []
+             */
+            thumbnail_urls: string[];
             /** Title */
             title: string;
         };
         /** ListingUpdate */
         ListingUpdate: {
+            /** Category */
+            category?: string | null;
             /** Condition */
             condition?: string | null;
             /** Deposit */
             deposit?: number | string | null;
             /** Description */
             description?: string | null;
+            /** Mrt Station */
+            mrt_station?: string | null;
+            /** Photo Keys */
+            photo_keys?: string[] | null;
+            /** Postal Code */
+            postal_code?: string | null;
             /** Price Day */
             price_day?: number | string | null;
             /** Price Month */
@@ -1014,9 +1300,166 @@ export interface components {
              * Stage
              * @enum {string}
              */
-            stage: "listing" | "handover" | "return";
+            stage: "listing" | "handover" | "return" | "avatar";
             /** Url */
             url: string;
+        };
+        /** Meetup */
+        Meetup: {
+            /** Available Actions */
+            available_actions: ("accept" | "counter" | "decline" | "cancel")[];
+            /**
+             * Awaiting Role
+             * @description Who must respond next; null once the meetup is no longer open.
+             */
+            awaiting_role: ("borrower" | "lender") | null;
+            /** Borrower Display Name */
+            borrower_display_name: string;
+            /**
+             * Borrower Id
+             * Format: uuid
+             */
+            borrower_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Events */
+            events: components["schemas"]["MeetupEvent"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Lender Display Name */
+            lender_display_name: string;
+            /**
+             * Lender Id
+             * Format: uuid
+             */
+            lender_id: string;
+            /**
+             * Listing Id
+             * Format: uuid
+             */
+            listing_id: string;
+            /** Listing Title */
+            listing_title: string;
+            /** Location */
+            location: string;
+            /**
+             * Meet At
+             * Format: date-time
+             */
+            meet_at: string;
+            /** Price */
+            price: string;
+            /**
+             * Proposed By
+             * Format: uuid
+             */
+            proposed_by: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "accepted" | "declined" | "cancelled";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Viewer Role
+             * @enum {string}
+             */
+            viewer_role: "borrower" | "lender";
+        };
+        /** MeetupCreate */
+        MeetupCreate: {
+            /**
+             * Listing Id
+             * Format: uuid
+             */
+            listing_id: string;
+            /**
+             * Location
+             * @description Where to meet.
+             */
+            location: string;
+            /**
+             * Meet At
+             * Format: date-time
+             * @description When to meet, as an ISO timestamp with an offset.
+             */
+            meet_at: string;
+            /** Message */
+            message?: string | null;
+            /**
+             * Price
+             * @description Offered price in SGD.
+             */
+            price: number | string;
+        };
+        /** MeetupEvent */
+        MeetupEvent: {
+            /** Author Display Name */
+            author_display_name: string;
+            /**
+             * Author Id
+             * Format: uuid
+             */
+            author_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "propose" | "counter" | "accept" | "decline" | "cancel";
+            /** Location */
+            location?: string | null;
+            /** Meet At */
+            meet_at?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Price */
+            price?: string | null;
+        };
+        /** MeetupNote */
+        MeetupNote: {
+            /** Message */
+            message?: string | null;
+        };
+        /** MeetupTerms */
+        MeetupTerms: {
+            /**
+             * Location
+             * @description Where to meet.
+             */
+            location: string;
+            /**
+             * Meet At
+             * Format: date-time
+             * @description When to meet, as an ISO timestamp with an offset.
+             */
+            meet_at: string;
+            /** Message */
+            message?: string | null;
+            /**
+             * Price
+             * @description Offered price in SGD.
+             */
+            price: number | string;
         };
         /** MembershipChange */
         MembershipChange: {
@@ -1109,7 +1552,7 @@ export interface components {
              * Stage
              * @enum {string}
              */
-            stage: "listing" | "handover" | "return";
+            stage: "listing" | "handover" | "return" | "avatar";
         };
         /** PresignResponse */
         PresignResponse: {
@@ -1152,6 +1595,38 @@ export interface components {
             condition: string;
             /** Title */
             title: string;
+        };
+        /** ProfileUpdate */
+        ProfileUpdate: {
+            /** Avatar Key */
+            avatar_key?: string | null;
+            /** Bio */
+            bio?: string | null;
+            /** Display Name */
+            display_name: string;
+        };
+        /** PublicProfile */
+        PublicProfile: {
+            /** Avatar Url */
+            avatar_url: string | null;
+            /** Bio */
+            bio: string | null;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Member Since
+             * Format: date-time
+             */
+            member_since: string;
+            /** Rating */
+            rating: number | null;
+            /** Review Count */
+            review_count: number;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
         };
         /** Review */
         Review: {
@@ -1290,6 +1765,119 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CurrentUserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    updateProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentUserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deleteAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountDeletionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Wrong password */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Rentals still in progress */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    previewAccountDeletion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountDeletionPreview"];
                 };
             };
             /** @description Validation Error */
@@ -1787,6 +2375,8 @@ export interface operations {
                 category?: string | null;
                 mrt?: string | null;
                 planning_area?: string | null;
+                owner_id?: string | null;
+                sort?: "newest" | "price_asc" | "price_desc";
                 min_price?: number | string | null;
                 max_price?: number | string | null;
                 from?: string | null;
@@ -2080,6 +2670,39 @@ export interface operations {
             };
         };
     };
+    getManagedListing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listing_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListingDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     attachListingMedia: {
         parameters: {
             query?: never;
@@ -2137,6 +2760,278 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PresignResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listMeetups: {
+        parameters: {
+            query?: {
+                role?: ("borrower" | "lender") | null;
+                status?: ("pending" | "accepted" | "declined" | "cancelled") | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meetup"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createMeetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeetupCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meetup"];
+                };
+            };
+            /** @description Proposing to meet about your own listing */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Listing not found or not active */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description You already have an open proposal for this listing */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getMeetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meetup_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meetup"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    acceptMeetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meetup_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MeetupNote"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meetup"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancelMeetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meetup_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MeetupNote"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meetup"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    counterMeetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meetup_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeetupTerms"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meetup"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    declineMeetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meetup_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MeetupNote"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meetup"];
                 };
             };
             /** @description Validation Error */
@@ -2303,6 +3198,130 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Review"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listSavedListings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Listing"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    saveListing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listing_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unsaveListing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                listing_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getPublicProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicProfile"];
                 };
             };
             /** @description Validation Error */

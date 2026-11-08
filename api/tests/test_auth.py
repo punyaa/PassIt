@@ -29,6 +29,8 @@ async def test_signup_starts_a_cookie_session(client: httpx.AsyncClient) -> None
         **response.json(),
         "email": "ada@example.com",  # stored lower-cased
         "plan": "saver",  # new accounts start on the free plan
+        "bio": None,
+        "avatar_url": None,
     }
 
 

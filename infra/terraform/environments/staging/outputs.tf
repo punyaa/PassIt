@@ -58,3 +58,17 @@ output "release_repository_url" {
 output "dashboard_name" {
   value = module.monitoring.dashboard_name
 }
+
+output "thumbnailer_repository_url" {
+  value = module.thumbnailer.repository_url
+}
+
+output "events_topic_arn" {
+  description = "Null while the email feature is off."
+  value       = one(module.notifications[*].topic_arn)
+}
+
+output "notification_addresses" {
+  description = "Addresses SES was asked to verify. Each must click the link AWS emails it."
+  value       = one(module.notifications[*].verified_addresses)
+}
