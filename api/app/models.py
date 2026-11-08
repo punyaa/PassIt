@@ -34,7 +34,13 @@ ledger_type = ENUM(
 )
 media_stage = ENUM("listing", "handover", "return", name="media_stage", create_type=False)
 meetup_status = ENUM(
-    "pending", "accepted", "declined", "cancelled", name="meetup_status", create_type=False
+    "pending",
+    "accepted",
+    "declined",
+    "cancelled",
+    "completed",
+    name="meetup_status",
+    create_type=False,
 )
 
 Money = Numeric(10, 2)
@@ -223,6 +229,9 @@ class Meetup(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, server_default=UUID_DEFAULT)
     listing_id: Mapped[UUID] = mapped_column(ForeignKey("listings.id"))
+    # Null only for meetups proposed before meetups were tied to bookings.
+    booking_id: Mapped[UUID | None] = mapped_column(ForeignKey("bookings.id"))
+    purpose: Mapped[str | None] = mapped_column(Text)  # "handover" or "return"
     borrower_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     lender_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     status: Mapped[str] = mapped_column(meetup_status, server_default=text("'pending'"))

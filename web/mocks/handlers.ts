@@ -291,6 +291,7 @@ export const handlers = [
       id: crypto.randomUUID(),
       listing_id: listing.id,
       listing_title: listing.title,
+      booking_id: terms.booking_id,
       borrower_id: borrower.id,
       borrower_display_name: borrower.name,
       lender_id: user.user_id,

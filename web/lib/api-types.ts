@@ -520,7 +520,8 @@ export interface paths {
         put?: never;
         /**
          * Create Meetup
-         * @description A borrower proposes a time, place and price to the lender of an active listing.
+         * @description The borrower proposes a time, place and price to the lender: to collect the item while
+         *     the booking is confirmed, or to return it once it has been handed over.
          */
         post: operations["createMeetup"];
         delete?: never;
@@ -1313,6 +1314,11 @@ export interface components {
              * @description Who must respond next; null once the meetup is no longer open.
              */
             awaiting_role: ("borrower" | "lender") | null;
+            /**
+             * Booking Id
+             * @description Null only for meetups proposed before they needed a booking.
+             */
+            booking_id?: string | null;
             /** Borrower Display Name */
             borrower_display_name: string;
             /**
@@ -1361,10 +1367,15 @@ export interface components {
              */
             proposed_by: string;
             /**
+             * Purpose
+             * @description Meeting to hand the item over, or to return it.
+             */
+            purpose?: ("handover" | "return") | null;
+            /**
              * Status
              * @enum {string}
              */
-            status: "pending" | "accepted" | "declined" | "cancelled";
+            status: "pending" | "accepted" | "declined" | "cancelled" | "completed";
             /**
              * Updated At
              * Format: date-time
@@ -1379,10 +1390,11 @@ export interface components {
         /** MeetupCreate */
         MeetupCreate: {
             /**
-             * Listing Id
+             * Booking Id
              * Format: uuid
+             * @description The caller's confirmed booking this meetup is for.
              */
-            listing_id: string;
+            booking_id: string;
             /**
              * Location
              * @description Where to meet.
@@ -1425,7 +1437,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "propose" | "counter" | "accept" | "decline" | "cancel";
+            kind: "propose" | "counter" | "accept" | "decline" | "cancel" | "complete";
             /** Location */
             location?: string | null;
             /** Meet At */
@@ -2781,7 +2793,7 @@ export interface operations {
         parameters: {
             query?: {
                 role?: ("borrower" | "lender") | null;
-                status?: ("pending" | "accepted" | "declined" | "cancelled") | null;
+                status?: ("pending" | "accepted" | "declined" | "cancelled" | "completed") | null;
                 limit?: number;
             };
             header?: never;
@@ -2836,21 +2848,14 @@ export interface operations {
                     "application/json": components["schemas"]["Meetup"];
                 };
             };
-            /** @description Proposing to meet about your own listing */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Listing not found or not active */
+            /** @description Booking not found, or not the caller's as borrower */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description You already have an open proposal for this listing */
+            /** @description Booking not awaiting handover or return, or meetup already live */
             409: {
                 headers: {
                     [name: string]: unknown;

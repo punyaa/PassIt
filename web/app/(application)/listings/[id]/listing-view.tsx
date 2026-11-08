@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 
 import { SaveListingButton } from "@/components/listing-tile";
 import { ListingPhoto } from "@/components/listing-card";
-import { ProposeMeetup } from "@/components/meetups";
 import { PhotoImage } from "@/components/photo-image";
 import { useSession } from "@/components/session";
 import { Alert, Badge, Button, Card, Spinner } from "@/components/ui";
@@ -125,10 +124,7 @@ export function ListingView({ id }: { id: string }) {
         {isOwner ? (
           <OwnerPanel listing={item} onChange={listing.setData} />
         ) : (
-          <>
-            <BookingPanel listing={item} />
-            <ProposeMeetup listing={item} />
-          </>
+          <BookingPanel listing={item} />
         )}
       </aside>
       {!isOwner && (

@@ -5,7 +5,11 @@ may accept it, counter with new terms, or decline. Making an offer counts as agr
 one accept means both sides have agreed and the meeting is scheduled. The person who made the
 latest offer may withdraw it, and either side may cancel a scheduled meeting before it happens.
 
-Meetups only coordinate the two people: they never create a booking or move money.
+A meetup belongs to a booking and has a purpose. The borrower proposes the *handover* meetup
+right after booking (while it is confirmed) and the *return* meetup once the item is in use
+(handed over). There is at most one proposed or scheduled meetup per booking and purpose.
+Recording the handover or return marks its meetup completed; cancelling the booking cancels it.
+Meetups only coordinate the two people: they never change a booking or move money.
 """
 
 from datetime import UTC, datetime
@@ -21,16 +25,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentUser
 from app.core.db import DbSession
-from app.models import Listing, User
+from app.models import Booking, Listing, User
 from app.models import Meetup as MeetupRow
 from app.models import MeetupEvent as MeetupEventRow
 from app.schemas import ApiModel
 
 router = APIRouter(prefix="/meetups", tags=["meetups"])
 
-MeetupStatus = Literal["pending", "accepted", "declined", "cancelled"]
+MeetupStatus = Literal["pending", "accepted", "declined", "cancelled", "completed"]
 MeetupAction = Literal["accept", "counter", "decline", "cancel"]
-MeetupEventKind = Literal["propose", "counter", "accept", "decline", "cancel"]
+MeetupEventKind = Literal["propose", "counter", "accept", "decline", "cancel", "complete"]
+MeetupPurpose = Literal["handover", "return"]
+# The booking state in which each kind of meetup can be proposed.
+PURPOSE_FOR_STATE: dict[str, MeetupPurpose] = {"confirmed": "handover", "handed_over": "return"}
 MeetupRole = Literal["borrower", "lender"]
 
 
@@ -60,7 +67,7 @@ class MeetupTerms(ApiModel):
 
 
 class MeetupCreate(MeetupTerms):
-    listing_id: UUID
+    booking_id: UUID = Field(description="The caller's confirmed booking this meetup is for.")
 
 
 class MeetupNote(ApiModel):
@@ -83,6 +90,12 @@ class Meetup(ApiModel):
     id: UUID
     listing_id: UUID
     listing_title: str
+    booking_id: UUID | None = Field(
+        default=None, description="Null only for meetups proposed before they needed a booking."
+    )
+    purpose: MeetupPurpose | None = Field(
+        default=None, description="Meeting to hand the item over, or to return it."
+    )
     borrower_id: UUID
     borrower_display_name: str
     lender_id: UUID
@@ -185,6 +198,8 @@ async def _views(db: AsyncSession, meetups: list[MeetupRow], viewer_id: UUID) ->
                 id=m.id,
                 listing_id=m.listing_id,
                 listing_title=titles[m.listing_id],
+                booking_id=m.booking_id,
+                purpose=m.purpose,
                 borrower_id=m.borrower_id,
                 borrower_display_name=names[m.borrower_id],
                 lender_id=m.lender_id,
@@ -249,22 +264,29 @@ def _record(
     status_code=status.HTTP_201_CREATED,
     operation_id="createMeetup",
     responses={
-        400: {"description": "Proposing to meet about your own listing"},
-        404: {"description": "Listing not found or not active"},
-        409: {"description": "You already have an open proposal for this listing"},
+        404: {"description": "Booking not found, or not the caller's as borrower"},
+        409: {"description": "Booking not awaiting handover or return, or meetup already live"},
     },
 )
 async def create_meetup(request: MeetupCreate, user: CurrentUser, db: DbSession) -> Meetup:
-    """A borrower proposes a time, place and price to the lender of an active listing."""
-    listing = await db.get(Listing, request.listing_id)
-    if listing is None or listing.status != "active":
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Listing is no longer available")
-    if listing.owner_id == user.id:
+    """The borrower proposes a time, place and price to the lender: to collect the item while
+    the booking is confirmed, or to return it once it has been handed over."""
+    booking = await db.scalar(
+        select(Booking).where(Booking.id == request.booking_id).with_for_update()
+    )
+    if booking is None or booking.borrower_id != user.id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Booking not found")
+    purpose = PURPOSE_FOR_STATE.get(booking.state)
+    if purpose is None:
         raise HTTPException(
-            status.HTTP_400_BAD_REQUEST, "You can't propose a meetup for your own listing"
+            status.HTTP_409_CONFLICT,
+            "Meetups can only be proposed before handover or while the item is being returned",
         )
+    listing = await db.get(Listing, booking.listing_id)
     meetup = MeetupRow(
         listing_id=listing.id,
+        booking_id=booking.id,
+        purpose=purpose,
         borrower_id=user.id,
         lender_id=listing.owner_id,
         meet_at=request.meet_at,
@@ -279,7 +301,7 @@ async def create_meetup(request: MeetupCreate, user: CurrentUser, db: DbSession)
         await db.rollback()
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            "You already have an open proposal for this listing. Check your Meetings.",
+            f"A {purpose} meetup is already proposed or scheduled. Check your Meetings.",
         ) from error
     _record(db, meetup, user.id, "propose", request.message, with_terms=True)
     await db.commit()
@@ -387,3 +409,37 @@ async def cancel_open_meetups(db: AsyncSession, user_id: UUID, message: str) -> 
         meetup.status = "cancelled"
         meetup.updated_at = now
         _record(db, meetup, user_id, "cancel", message)
+
+
+async def cancel_booking_meetups(db: AsyncSession, booking_id: UUID, user_id: UUID) -> None:
+    """Close the live meetup of a booking that was just cancelled. The caller commits."""
+    rows = await db.scalars(
+        select(MeetupRow)
+        .where(MeetupRow.booking_id == booking_id, MeetupRow.status.in_(("pending", "accepted")))
+        .with_for_update()
+    )
+    now = datetime.now(UTC)
+    for meetup in rows:
+        meetup.status = "cancelled"
+        meetup.updated_at = now
+        _record(db, meetup, user_id, "cancel", "Booking cancelled")
+
+
+async def complete_booking_meetups(
+    db: AsyncSession, booking_id: UUID, purpose: MeetupPurpose, user_id: UUID
+) -> None:
+    """The handover or return has been recorded: its meetup is done. The caller commits."""
+    rows = await db.scalars(
+        select(MeetupRow)
+        .where(
+            MeetupRow.booking_id == booking_id,
+            MeetupRow.purpose == purpose,
+            MeetupRow.status.in_(("pending", "accepted")),
+        )
+        .with_for_update()
+    )
+    now = datetime.now(UTC)
+    for meetup in rows:
+        meetup.status = "completed"
+        meetup.updated_at = now
+        _record(db, meetup, user_id, "complete", f"{purpose.capitalize()} recorded")
