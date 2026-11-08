@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useAccountData, useRentalReminders } from "./account-data";
 import { meetupsAwaitingReply } from "./meetups";
 import { Brand } from "./brand";
+import { isPlusPlan, PLUS_PLAN_NAMES } from "@/lib/auth";
 import { useSession } from "./session";
 
 const links = [
@@ -40,6 +41,11 @@ export function AppHeader() {
     Rentals: { count: reminders.length, title: "rental reminders" },
     Meetings: { count: replies, title: "meetup proposals waiting for you" },
   };
+  const plan = user?.plan ?? null;
+  const plusLabel =
+    isPlusPlan(plan) && plan !== "saver"
+      ? PLUS_PLAN_NAMES[plan]
+      : "Become Plus";
   const active =
     pathname === "/"
       ? "/home"
@@ -115,6 +121,17 @@ export function AppHeader() {
             {!loading && !user && (
               <Link className="text-sm font-bold" href="/login">
                 Log in
+              </Link>
+            )}
+            {!loading && (
+              <Link
+                aria-label={plusLabel}
+                className="whitespace-nowrap rounded-xl bg-sand px-3 py-3 text-sm font-bold text-orange-deep"
+                href={user ? "/membership" : "/plus"}
+                title={plusLabel}
+              >
+                <span aria-hidden="true">👑</span>
+                <span className="hidden sm:inline"> {plusLabel}</span>
               </Link>
             )}
             <Link
