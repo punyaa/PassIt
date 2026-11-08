@@ -153,3 +153,82 @@ async def test_invalid_plan_rejected(client, make_user):
         "/memberships/me", json={"plan": "platinum"}, headers=user.headers
     )
     assert bad_change.status_code == 422
+
+
+async def choose(client, user, plan):
+    chosen = await client.post("/memberships/me", json={"plan": plan}, headers=user.headers)
+    assert chosen.status_code == 200, chosen.text
+    return chosen.json()
+
+
+async def test_listing_limit_follows_lender_plan(client, make_user):
+    saver, prime, mega = make_user("Sam"), make_user("Pia"), make_user("Mo")
+    await choose(client, prime, "eco-saver")
+    await choose(client, mega, "mega-saver")
+
+    for i in range(3):
+        await create_listing(client, saver, title=f"Saver item {i}")
+    blocked = await client.post(
+        "/listings",
+        json={
+            "title": "One too many",
+            "category": "Tools",
+            "condition": "Good",
+            "price_day": "5.00",
+            "deposit": "0",
+            "mrt_station": "Bedok",
+        },
+        headers=saver.headers,
+    )
+    assert blocked.status_code == 403
+    assert "upgrade to PassIt Plus" in blocked.json()["detail"]
+
+    for i in range(10):
+        await create_listing(client, prime, title=f"Prime item {i}")  # Prime: up to 10
+    eleventh = await client.post(
+        "/listings",
+        json={
+            "title": "Prime item 10",
+            "category": "Tools",
+            "condition": "Good",
+            "price_day": "5.00",
+            "deposit": "0",
+            "mrt_station": "Bedok",
+        },
+        headers=prime.headers,
+    )
+    assert eleventh.status_code == 403
+
+    for i in range(11):
+        await create_listing(client, mega, title=f"Mega item {i}")  # Mega: unlimited
+
+
+async def test_payout_hold_follows_lender_plan(client, make_user):
+    borrower = make_user("Bea")
+    holds = {}
+    for name, plan in (("Lia", None), ("Lou", "eco-saver"), ("Lex", "mega-saver")):
+        lender = make_user(name)
+        if plan:
+            await choose(client, lender, plan)
+        listing = await create_listing(client, lender)
+        booking = (await book(client, borrower, listing["id"])).json()
+        handed = await checklist(client, lender, booking["id"], "handover")
+        assert handed.status_code == 200, handed.text
+        body = handed.json()
+        released = datetime.fromisoformat(body["fee_release_at"])
+        handed_at = datetime.fromisoformat(body["handed_over_at"])
+        holds[plan or "saver"] = released - handed_at
+
+    assert holds["saver"] == timedelta(days=7)
+    assert holds["eco-saver"] == timedelta(days=3)  # Prime: payouts in 3 days
+    assert holds["mega-saver"] == timedelta(hours=1)  # Mega: same-day payouts
+
+
+async def test_membership_exposes_lender_perks(client, make_user):
+    user = make_user("Perky")
+    prime = (await choose(client, user, "eco-saver"))["perks"]
+    assert prime["listing_limit"] == 10
+    assert prime["payout_hold_minutes"] == 3 * 24 * 60
+    mega = (await choose(client, user, "mega-saver"))["perks"]
+    assert mega["listing_limit"] is None
+    assert mega["payout_hold_minutes"] == 60

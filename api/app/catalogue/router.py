@@ -15,6 +15,8 @@ from app.core.config import get_settings
 from app.core.db import DbSession
 from app.integrations.onemap import geocode_postal_code
 from app.media.service import attach_media, listing_photos, require_owned_keys
+from app.memberships.plans import listing_limit_for
+from app.memberships.service import plan_for
 from app.models import Availability, Booking, Media, Review, User, inclusive_range
 from app.models import Listing as ListingRow
 from app.schemas import ApiModel, DateWindow
@@ -235,17 +237,19 @@ async def list_mrt_stations() -> list[MrtStation]:
 
 
 async def _require_listing_slot(db: AsyncSession, owner_id: UUID) -> None:
-    """Free tier: at most `free_listing_limit` non-archived listings per lender. The user
-    row lock serialises concurrent creates by the same lender."""
+    """Non-archived listings per lender are capped by their Plus plan: `free_listing_limit`
+    on Saver, more on paid plans, unlimited on Mega Saver. The user row lock serialises
+    concurrent creates by the same lender."""
     await db.execute(select(User.id).where(User.id == owner_id).with_for_update())
     count = await db.scalar(
         select(func.count()).where(ListingRow.owner_id == owner_id, ListingRow.status != "archived")
     )
-    limit = get_settings().free_listing_limit
-    if count >= limit:
+    limit = listing_limit_for(await plan_for(db, owner_id), get_settings().free_listing_limit)
+    if limit is not None and count >= limit:
         raise HTTPException(
             status.HTTP_403_FORBIDDEN,
-            f"Free accounts can have {limit} listings. Archive one to add another.",
+            f"Your plan allows {limit} active listings. Archive one, or upgrade to "
+            "PassIt Plus for more.",
         )
 
 

@@ -135,7 +135,7 @@ export function AppHeader() {
               </Link>
             )}
             <Link
-              className="rounded-xl bg-forest px-4 py-3 text-sm font-bold text-white"
+              className="whitespace-nowrap rounded-xl bg-forest px-4 py-3 text-sm font-bold text-white"
               href="/listings/new"
             >
               + List an item

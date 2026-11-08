@@ -8,10 +8,11 @@ from fastapi import APIRouter, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 
 from app.auth.dependencies import CurrentUser
+from app.core.config import get_settings
 from app.core.db import DbSession
 from app.integrations.scheduler import get_scheduler
 from app.memberships import service
-from app.memberships.plans import PLANS, Plan
+from app.memberships.plans import PLANS, Plan, fee_hold_minutes_for, listing_limit_for
 from app.models import Membership
 from app.schemas import ApiModel
 
@@ -25,6 +26,8 @@ class PerksResponse(ApiModel):
     free_rescheduling: bool
     delivery_credits: int
     grace_days: int
+    listing_limit: int | None  # None = unlimited
+    payout_hold_minutes: int
 
 
 class MembershipResponse(ApiModel):
@@ -42,6 +45,7 @@ class MembershipChange(ApiModel):
 
 def _to_response(membership: Membership) -> MembershipResponse:
     perks = PLANS[membership.plan]
+    settings = get_settings()
     return MembershipResponse(
         user_id=membership.user_id,
         plan=membership.plan,
@@ -53,6 +57,8 @@ def _to_response(membership: Membership) -> MembershipResponse:
             free_rescheduling=perks.free_rescheduling,
             delivery_credits=perks.delivery_credits,
             grace_days=perks.grace_days,
+            listing_limit=listing_limit_for(membership.plan, settings.free_listing_limit),
+            payout_hold_minutes=fee_hold_minutes_for(membership.plan, settings.fee_hold_minutes),
         ),
     )
 

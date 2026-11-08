@@ -20,7 +20,7 @@ from app.integrations.notifications import publish_event
 from app.integrations.scheduler import get_scheduler
 from app.integrations.storage import get_storage
 from app.media.service import attach_media
-from app.memberships.plans import deposit_for
+from app.memberships.plans import deposit_for, fee_hold_minutes_for
 from app.memberships.service import plan_for
 from app.models import Availability, Checklist, Listing, Media, Review, User, inclusive_range
 from app.models import Booking as BookingRow
@@ -331,7 +331,11 @@ async def handover_booking(
     await _record_checklist(db, booking, "handover", submission, user)
     booking.state = "handed_over"
     booking.handed_over_at = now
-    booking.fee_release_at = now + timedelta(minutes=get_settings().fee_hold_minutes)
+    # Faster payouts are a lender perk: the hold follows the lender's plan.
+    hold = fee_hold_minutes_for(
+        await plan_for(db, listing.owner_id), get_settings().fee_hold_minutes
+    )
+    booking.fee_release_at = now + timedelta(minutes=hold)
     await db.commit()
     try:
         # After commit: a rolled-back handover must never leave a live schedule behind.

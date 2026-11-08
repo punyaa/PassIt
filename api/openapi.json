@@ -1996,13 +1996,30 @@
           "grace_days": {
             "title": "Grace Days",
             "type": "integer"
+          },
+          "listing_limit": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Listing Limit"
+          },
+          "payout_hold_minutes": {
+            "title": "Payout Hold Minutes",
+            "type": "integer"
           }
         },
         "required": [
           "deposit_factor",
           "free_rescheduling",
           "delivery_credits",
-          "grace_days"
+          "grace_days",
+          "listing_limit",
+          "payout_hold_minutes"
         ],
         "title": "PerksResponse",
         "type": "object"

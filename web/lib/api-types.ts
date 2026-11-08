@@ -1540,6 +1540,10 @@ export interface components {
             free_rescheduling: boolean;
             /** Grace Days */
             grace_days: number;
+            /** Listing Limit */
+            listing_limit: number | null;
+            /** Payout Hold Minutes */
+            payout_hold_minutes: number;
         };
         /** PresignRequest */
         PresignRequest: {
