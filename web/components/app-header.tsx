@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRentalReminders } from "./account-data";
+import { useAccountData, useRentalReminders } from "./account-data";
+import { meetupsAwaitingReply } from "./meetups";
 import { Brand } from "./brand";
 import { useSession } from "./session";
 
@@ -19,6 +20,11 @@ const links = [
     path: "M5 5h14v16H5ZM8 2v6m8-6v6M5 11h14",
   },
   {
+    href: "/meetings",
+    label: "Meetings",
+    path: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z",
+  },
+  {
     href: "/profile",
     label: "Profile",
     path: "M20 21v-2a8 8 0 0 0-16 0v2M16 6a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
@@ -29,6 +35,11 @@ export function AppHeader() {
   const { user, loading } = useSession();
   const pathname = usePathname();
   const { reminders } = useRentalReminders();
+  const replies = meetupsAwaitingReply(useAccountData().meetups.data).length;
+  const badges: Record<string, { count: number; title: string }> = {
+    Rentals: { count: reminders.length, title: "rental reminders" },
+    Meetings: { count: replies, title: "meetup proposals waiting for you" },
+  };
   const active =
     pathname === "/"
       ? "/home"
@@ -57,8 +68,8 @@ export function AppHeader() {
             className="app-nav-link"
             aria-label={link.label}
             title={
-              link.label === "Rentals" && reminders.length
-                ? `${reminders.length} rental reminders`
+              badges[link.label]?.count
+                ? `${badges[link.label].count} ${badges[link.label].title}`
                 : undefined
             }
           >
@@ -77,12 +88,12 @@ export function AppHeader() {
             </svg>
             <span>
               {link.label}
-              {link.label === "Rentals" && reminders.length > 0 && (
+              {(badges[link.label]?.count ?? 0) > 0 && (
                 <span
                   aria-hidden="true"
                   className="ml-1 rounded-full bg-orange px-1.5 py-0.5 text-[10px] text-ink"
                 >
-                  {reminders.length}
+                  {badges[link.label].count}
                 </span>
               )}
             </span>

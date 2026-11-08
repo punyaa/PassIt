@@ -8,7 +8,7 @@ so it is anonymised rather than removed:
     so the real address is free to register again;
   - listings never rented are deleted with their photos and dates; listings with rental history
     are archived and stripped of description, photos, open dates and coordinates;
-  - the person's saved listings are removed;
+  - the person's saved listings are removed, and their open or upcoming meetups cancelled;
   - bookings, ledger entries, checklists and reviews stay, now attributed to "Deleted user".
 
 Deletion is refused while any rental is still in progress (as borrower or lender), so nobody's
@@ -26,6 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import SESSION_COOKIE, CurrentUser
 from app.auth.passwords import verify_password
 from app.core.db import DbSession
+from app.meetups.router import cancel_open_meetups
 from app.models import Availability, Booking, Listing, Media, SavedListing, User
 from app.schemas import ApiModel
 
@@ -123,6 +124,7 @@ async def delete_account(
         listing.latitude = listing.longitude = None
         await db.execute(delete(Availability).where(Availability.listing_id == listing.id))
     await db.execute(delete(SavedListing).where(SavedListing.user_id == me.id))
+    await cancel_open_meetups(db, me.id, "Account deleted")
 
     me.email = f"deleted-{me.id}@deleted.invalid"
     me.password_hash = "!deleted"  # not an argon2 hash, so no password can ever match

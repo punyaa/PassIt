@@ -2,6 +2,7 @@
 
 import { NeedsAction } from "@/components/dashboard-bookings";
 import { ListingCard } from "@/components/listing-card";
+import { MeetupSection } from "@/components/meetups";
 import { PageShell } from "@/components/page-shell";
 import { RequireAuth } from "@/components/session";
 import {
@@ -59,6 +60,10 @@ function LenderDashboard() {
 
       <div className="mt-10">
         <NeedsAction role="lender" compact={false} />
+      </div>
+
+      <div className="mt-10">
+        <MeetupSection role="lender" title="Meetup requests" />
       </div>
 
       <section className="mt-10">

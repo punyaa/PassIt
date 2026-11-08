@@ -37,7 +37,7 @@ from app.auth.dependencies import issue_access_token  # noqa: E402
 from app.main import app  # noqa: E402
 
 TABLES = (
-    "saved_listings, reviews, checklists, media, ledger_entries, "
+    "meetup_events, meetups, saved_listings, reviews, checklists, media, ledger_entries, "
     "bookings, availability, listings, users"
 )
 

@@ -10,6 +10,7 @@ import { useSession } from "./session";
 type AccountData = {
   saved: ApiState<Schemas["Listing"][]>;
   rentals: ApiState<Schemas["Booking"][]>;
+  meetups: ApiState<Schemas["Meetup"][]>;
   toggleSaved: (id: string, saved: boolean) => Promise<void>;
 };
 const AccountContext = createContext<AccountData | null>(null);
@@ -39,17 +40,25 @@ function AccountDataState({
   const rentals = useApi<Schemas["Booking"][]>(
     authenticated ? "/bookings?role=all&limit=100" : null,
   );
+  const meetups = useApi<Schemas["Meetup"][]>(
+    authenticated ? "/meetups?limit=100" : null,
+  );
   const pathname = usePathname();
   const reloadRentals = rentals.reload;
   const reloadSaved = saved.reload;
+  const reloadMeetups = meetups.reload;
   useEffect(() => {
-    if (authenticated) reloadRentals();
-  }, [pathname, authenticated, reloadRentals]);
+    if (authenticated) {
+      reloadRentals();
+      reloadMeetups();
+    }
+  }, [pathname, authenticated, reloadRentals, reloadMeetups]);
   useEffect(() => {
     if (!authenticated) return;
     const refresh = () => {
       reloadRentals();
       reloadSaved();
+      reloadMeetups();
     };
     const timer = window.setInterval(refresh, 60_000);
     window.addEventListener("focus", refresh);
@@ -57,7 +66,7 @@ function AccountDataState({
       window.clearInterval(timer);
       window.removeEventListener("focus", refresh);
     };
-  }, [authenticated, reloadRentals, reloadSaved]);
+  }, [authenticated, reloadRentals, reloadSaved, reloadMeetups]);
   async function toggleSaved(id: string, isSaved: boolean) {
     await apiRequest(`/saved-listings/${id}`, {
       method: isSaved ? "DELETE" : "PUT",
@@ -65,7 +74,7 @@ function AccountDataState({
     saved.reload();
   }
   return (
-    <AccountContext value={{ saved, rentals, toggleSaved }}>
+    <AccountContext value={{ saved, rentals, meetups, toggleSaved }}>
       {children}
     </AccountContext>
   );

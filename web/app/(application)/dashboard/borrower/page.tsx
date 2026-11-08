@@ -1,6 +1,7 @@
 "use client";
 
 import { NeedsAction } from "@/components/dashboard-bookings";
+import { MeetupSection } from "@/components/meetups";
 import { PageShell } from "@/components/page-shell";
 import { RequireAuth } from "@/components/session";
 import {
@@ -59,6 +60,9 @@ function BorrowerDashboard({ name }: { name: string }) {
       )}
       <div className="mt-10">
         <NeedsAction role="borrower" compact={false} />
+      </div>
+      <div className="mt-10">
+        <MeetupSection role="borrower" title="Your meetup proposals" />
       </div>
     </>
   );
