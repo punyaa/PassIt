@@ -20,6 +20,7 @@ from app.integrations.notifications import publish_event
 from app.integrations.scheduler import get_scheduler
 from app.integrations.storage import get_storage
 from app.media.service import attach_media
+from app.meetups.router import cancel_booking_meetups, complete_booking_meetups
 from app.memberships.plans import deposit_for, fee_hold_minutes_for
 from app.memberships.service import plan_for
 from app.models import Availability, Checklist, Listing, Media, Review, User, inclusive_range
@@ -329,6 +330,7 @@ async def handover_booking(
     require_action("handover", booking.state, role)
     now = datetime.now(UTC)
     await _record_checklist(db, booking, "handover", submission, user)
+    await complete_booking_meetups(db, booking.id, "handover", user.id)
     booking.state = "handed_over"
     booking.handed_over_at = now
     # Faster payouts are a lender perk: the hold follows the lender's plan.
@@ -360,6 +362,7 @@ async def return_booking(
     booking, listing, role = await _load_for_party(db, booking_id, user.id, lock=True)
     require_action("return", booking.state, role)
     await _record_checklist(db, booking, "return", submission, user)
+    await complete_booking_meetups(db, booking.id, "return", user.id)
     booking.state = "returned"
     booking.returned_at = datetime.now(UTC)
     await db.commit()
@@ -376,6 +379,7 @@ async def cancel_booking(
     require_action("cancel", booking.state, role)
     await payment_service.refund_cancelled_booking(db, booking)
     await ledger_service.reverse_holds(db, booking)
+    await cancel_booking_meetups(db, booking.id, user.id)
     booking.state = "cancelled"
     booking.cancelled_at = datetime.now(UTC)
     await db.commit()

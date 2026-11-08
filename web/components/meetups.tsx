@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 
 import { apiPost, type Schemas } from "@/lib/api-client";
 import { money } from "@/lib/format";
@@ -177,91 +177,188 @@ export function MeetupTermsForm({
   );
 }
 
-/** Listing page: the borrower opens a negotiation with the lender. */
-export function ProposeMeetup({
-  listing,
+/** 10:00 on the booking's start date, if that is still ahead; otherwise the form's default. */
+function startOfRental(startDate: string): string | undefined {
+  const at = new Date(`${startDate}T10:00`);
+  return at.getTime() > Date.now() ? at.toISOString() : undefined;
+}
+
+/**
+ * Booking page: arrange the meetups for this booking.
+ *
+ * Meetups only exist for bookings, and their purpose follows the booking: while it is
+ * confirmed the borrower proposes where to *collect* the item (the form pops up by itself right
+ * after booking, `autoOpen`); once it is handed over, "Initiate return" proposes where to
+ * *return* it (`openRequest` opens the form from the progress bar). With a meetup already
+ * proposed or scheduled for the current step, or nothing left to arrange, the button is
+ * disabled and says why. Recording the handover or return completes its meetup.
+ */
+export function BookingMeetup({
+  booking,
+  autoOpen,
+  openRequest = 0,
 }: {
-  listing: Schemas["ListingDetail"];
+  booking: Schemas["Booking"];
+  autoOpen: boolean;
+  /** Increment to open the form, e.g. from the "Initiate return" step. */
+  openRequest?: number;
 }) {
-  const { user } = useSession();
   const { meetups } = useAccountData();
+  const ref = useRef<HTMLDialogElement>(null);
+  const headingId = useId();
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
+  const autoOpened = useRef(false);
 
-  if (listing.status !== "active") return null;
-  const existing = meetups.data?.find(
+  const purpose: "handover" | "return" | null =
+    booking.state === "confirmed"
+      ? "handover"
+      : booking.state === "handed_over"
+        ? "return"
+        : null;
+  const live = meetups.data?.find(
     (m) =>
-      m.listing_id === listing.id &&
-      m.viewer_role === "borrower" &&
-      m.status === "pending",
+      m.booking_id === booking.id &&
+      m.purpose === purpose &&
+      (m.status === "pending" || m.status === "accepted"),
   );
+  const isBorrower = booking.viewer_role === "borrower";
+  const canPropose = isBorrower && !!purpose && !live && !!meetups.data;
 
-  let body;
-  if (!user) {
-    body = (
-      <Link
-        className="mt-4 block text-center text-sm font-bold underline"
-        href={`/login?next=${encodeURIComponent(`/listings/${listing.id}`)}`}
-      >
-        Log in to propose a meetup
-      </Link>
-    );
-  } else if (sent || existing) {
-    body = (
-      <div className="mt-4">
-        <Alert tone={sent ? "success" : "info"}>
-          {sent
-            ? `Sent! ${listing.owner_display_name} can accept or suggest changes.`
-            : `You have an open proposal with ${listing.owner_display_name}.`}{" "}
-          <Link className="font-bold underline" href="/meetings">
-            View in Meetings
-          </Link>
-        </Alert>
+  // Pop the handover form up once, straight after booking.
+  useEffect(() => {
+    if (autoOpen && canPropose && purpose === "handover" && !autoOpened.current) {
+      autoOpened.current = true;
+      setOpen(true);
+    }
+  }, [autoOpen, canPropose, purpose]);
+
+  // Open on request, e.g. clicking "Initiate return". A click that lands while meetups are
+  // still loading is kept and honoured as soon as proposing is possible.
+  const handledRequest = useRef(0);
+  useEffect(() => {
+    if (openRequest > handledRequest.current && canPropose) {
+      handledRequest.current = openRequest;
+      setOpen(true);
+    }
+  }, [openRequest, canPropose]);
+
+  // A new step (handover done) gets a fresh "sent" state.
+  useEffect(() => setSent(false), [purpose]);
+
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+  }, [open]);
+
+  // Nothing to arrange once the item is back, and lenders only see an arranged meetup.
+  if (!purpose) return null;
+  if (!isBorrower && !live) return null;
+
+  const isReturn = purpose === "return";
+  // Before a return meetup exists, "Initiate return" on the next-step card opens the form, so
+  // this card only shows the form itself (no duplicate button).
+  const formOnly = isReturn && !live && !sent;
+  const other = isBorrower ? "the lender" : "the borrower";
+  let status: string | null = null;
+  if (live?.status === "accepted")
+    status = `${isReturn ? "Return" : "Handover"} meetup scheduled: ${formatMeetingTime(live.meet_at)} at ${live.location}.`;
+  else if (live)
+    status =
+      live.awaiting_role === booking.viewer_role
+        ? `${isBorrower ? "The lender" : "The borrower"} replied about the ${purpose} meetup. It's your turn.`
+        : `${isReturn ? "Return" : "Handover"} meetup proposed. Waiting for ${other} to reply.`;
+
+  const dialog = (
+    <dialog
+      aria-labelledby={headingId}
+      className="m-auto w-[min(30rem,calc(100vw-2rem))] rounded-card border border-line bg-white p-0 text-ink shadow-2xl backdrop:bg-ink/50"
+      onCancel={(event) => {
+        event.preventDefault();
+        setOpen(false);
+      }}
+      ref={ref}
+    >
+      <div className="p-6">
+        <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-orange-deep">
+          Next step
+        </p>
+        <h2 className="mt-1 text-xl font-extrabold" id={headingId}>
+          {isReturn ? "Propose a return meetup" : "Propose a meetup"}
+        </h2>
+        <p className="mt-1 mb-4 text-sm leading-6 text-muted">
+          {isReturn
+            ? `When and where will you return ${booking.listing_title}? The lender can accept or suggest changes.`
+            : `When and where should you collect ${booking.listing_title}? The lender can accept or suggest changes.`}
+        </p>
+        {open && (
+          <MeetupTermsForm
+            initial={{
+              meet_at: isReturn
+                ? startOfRental(booking.end_date)
+                : startOfRental(booking.start_date),
+              price: isReturn ? "0.00" : booking.fee,
+            }}
+            onCancel={() => setOpen(false)}
+            onSubmit={async (terms) => {
+              await apiPost<Meetup>("/meetups", {
+                booking_id: booking.id,
+                ...terms,
+                message: terms.message || null,
+              });
+              setSent(true);
+              setOpen(false);
+              meetups.reload();
+            }}
+            submitLabel="Send proposal"
+          />
+        )}
       </div>
-    );
-  } else if (!open) {
-    body = (
-      <Button
-        className="mt-4 w-full"
-        onClick={() => setOpen(true)}
-        variant="secondary"
-      >
-        Propose a meetup
-      </Button>
-    );
-  } else {
-    body = (
-      <div className="mt-4">
-        <MeetupTermsForm
-          initial={{
-            location: listing.mrt_station ? `${listing.mrt_station} MRT` : "",
-            price: listing.price_day,
-          }}
-          onCancel={() => setOpen(false)}
-          onSubmit={async (terms) => {
-            await apiPost<Meetup>("/meetups", {
-              listing_id: listing.id,
-              ...terms,
-              message: terms.message || null,
-            });
-            setSent(true);
-            setOpen(false);
-            meetups.reload();
-          }}
-          submitLabel="Send proposal"
-        />
-      </div>
-    );
-  }
+    </dialog>
+  );
+  if (formOnly) return dialog;
 
   return (
-    <Card className="mt-4">
-      <strong className="text-lg">Meet the lender</strong>
+    <Card>
+      <strong className="text-lg">
+        {isReturn ? "Arrange the return" : "Meet the lender"}
+      </strong>
       <p className="mt-1 text-sm leading-6 text-muted">
-        Suggest a time, place and price. {listing.owner_display_name} can accept
-        or counter, and once you both agree it appears in your Meetings.
+        {isReturn
+          ? "Agree on when and where to give the item back. Recording the return closes the meetup."
+          : "Agree on a time, place and price for the handover. Recording the handover closes the meetup."}
       </p>
-      {body}
+      {(sent || status) && (
+        <div className="mt-4">
+          <Alert tone={sent && !live ? "success" : "info"}>
+            {status ?? "Proposal sent."}{" "}
+            <Link className="font-bold underline" href="/meetings">
+              View in Meetings
+            </Link>
+          </Alert>
+        </div>
+      )}
+      {/* The return is initiated from the next-step card; this card only reports its status. */}
+      {isBorrower && !isReturn && (
+        <>
+          <Button
+            className="mt-4 w-full"
+            disabled={!canPropose}
+            onClick={() => setOpen(true)}
+            variant="secondary"
+          >
+            {isReturn ? "Initiate return" : "Propose a meetup"}
+          </Button>
+          {live && (
+            <p className="mt-2 text-xs text-muted">
+              A {purpose} meetup is already arranged for this booking.
+            </p>
+          )}
+        </>
+      )}
+      {dialog}
     </Card>
   );
 }
@@ -286,6 +383,8 @@ function StatusBadge({ meetup }: { meetup: Meetup }) {
       );
     case "declined":
       return <Badge tone="danger">Declined</Badge>;
+    case "completed":
+      return <Badge tone="success">Completed</Badge>;
     default:
       return <Badge>Cancelled</Badge>;
   }
@@ -297,6 +396,7 @@ const verbs: Record<MeetupEvent["kind"], string> = {
   accept: "accepted",
   decline: "declined",
   cancel: "cancelled",
+  complete: "marked it done",
 };
 
 function Conversation({
@@ -386,6 +486,11 @@ export function MeetupCard({
           >
             {meetup.listing_title}
           </Link>
+          {meetup.purpose && (
+            <span className="ml-2 text-xs font-bold uppercase tracking-[0.1em] text-orange-deep">
+              {meetup.purpose === "return" ? "Return" : "Handover"}
+            </span>
+          )}
           <p className="text-sm text-muted">
             {meetup.viewer_role === "borrower"
               ? "Borrowing from "
@@ -548,7 +653,7 @@ export function MeetupSection({
         >
           {role === "lender"
             ? "When a borrower proposes a time, place and price, it shows up here."
-            : "Propose a meetup from any listing to agree on a time, place and price."}
+            : "Book an item, then propose a meetup to agree on a time, place and price."}
         </EmptyState>
       )}
       {open.map((meetup) => (

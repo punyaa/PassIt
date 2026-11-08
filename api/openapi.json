@@ -1489,6 +1489,19 @@
             "description": "Who must respond next; null once the meetup is no longer open.",
             "title": "Awaiting Role"
           },
+          "booking_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null only for meetups proposed before they needed a booking.",
+            "title": "Booking Id"
+          },
           "borrower_display_name": {
             "title": "Borrower Display Name",
             "type": "string"
@@ -1551,12 +1564,29 @@
             "title": "Proposed By",
             "type": "string"
           },
+          "purpose": {
+            "anyOf": [
+              {
+                "enum": [
+                  "handover",
+                  "return"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Meeting to hand the item over, or to return it.",
+            "title": "Purpose"
+          },
           "status": {
             "enum": [
               "pending",
               "accepted",
               "declined",
-              "cancelled"
+              "cancelled",
+              "completed"
             ],
             "title": "Status",
             "type": "string"
@@ -1601,9 +1631,10 @@
       "MeetupCreate": {
         "additionalProperties": false,
         "properties": {
-          "listing_id": {
+          "booking_id": {
+            "description": "The caller's confirmed booking this meetup is for.",
             "format": "uuid",
-            "title": "Listing Id",
+            "title": "Booking Id",
             "type": "string"
           },
           "location": {
@@ -1649,7 +1680,7 @@
           "meet_at",
           "location",
           "price",
-          "listing_id"
+          "booking_id"
         ],
         "title": "MeetupCreate",
         "type": "object"
@@ -1682,7 +1713,8 @@
               "counter",
               "accept",
               "decline",
-              "cancel"
+              "cancel",
+              "complete"
             ],
             "title": "Kind",
             "type": "string"
@@ -4588,7 +4620,8 @@
                     "pending",
                     "accepted",
                     "declined",
-                    "cancelled"
+                    "cancelled",
+                    "completed"
                   ],
                   "type": "string"
                 },
@@ -4665,7 +4698,7 @@
         ]
       },
       "post": {
-        "description": "A borrower proposes a time, place and price to the lender of an active listing.",
+        "description": "The borrower proposes a time, place and price to the lender: to collect the item while\nthe booking is confirmed, or to return it once it has been handed over.",
         "operationId": "createMeetup",
         "parameters": [
           {
@@ -4706,14 +4739,11 @@
             },
             "description": "Successful Response"
           },
-          "400": {
-            "description": "Proposing to meet about your own listing"
-          },
           "404": {
-            "description": "Listing not found or not active"
+            "description": "Booking not found, or not the caller's as borrower"
           },
           "409": {
-            "description": "You already have an open proposal for this listing"
+            "description": "Booking not awaiting handover or return, or meetup already live"
           },
           "422": {
             "content": {

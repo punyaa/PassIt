@@ -7,9 +7,10 @@ import { useEffect, useState } from "react";
 import { ConfirmAction } from "@/components/confirm-action";
 import { useAccountData } from "@/components/account-data";
 import { BookingStateBadge } from "@/components/booking-state";
+import { BookingMeetup } from "@/components/meetups";
 import { LedgerTable, settlement } from "@/components/booking-summary";
 import { PaymentCard } from "@/components/payment-card";
-import { Alert, Card, LinkButton, Spinner } from "@/components/ui";
+import { Alert, Button, Card, LinkButton, Spinner } from "@/components/ui";
 import { apiPost, type Schemas } from "@/lib/api-client";
 import {
   dateRange,
@@ -22,15 +23,17 @@ import { useApi } from "@/lib/use-api";
 
 type Booking = Schemas["Booking"];
 
-const STEPS: { state: Booking["state"]; label: string }[] = [
-  { state: "confirmed", label: "Booked" },
-  { state: "handed_over", label: "Handed over" },
-  { state: "returned", label: "Returned" },
-  { state: "settled", label: "Completed" },
+const STEPS: { key: string; label: string }[] = [
+  { key: "confirmed", label: "Booked" },
+  { key: "handed_over", label: "Handed over" },
+  { key: "initiate_return", label: "Initiate return" },
+  { key: "returned", label: "Returned" },
+  { key: "settled", label: "Completed" },
 ];
 
 export function BookingView({ id }: { id: string }) {
-  const { rentals } = useAccountData();
+  const { rentals, meetups } = useAccountData();
+  const [returnRequest, setReturnRequest] = useState(0);
   const booking = useApi<Booking>(`/bookings/${id}`);
   const ledger = useApi<Schemas["LedgerEntry"][]>(`/bookings/${id}/ledger`);
   const isNew = useSearchParams().get("new") === "1";
@@ -57,6 +60,20 @@ export function BookingView({ id }: { id: string }) {
   if (booking.error || !booking.data)
     return <Alert>{booking.error?.message ?? "Booking not found."}</Alert>;
   const b = booking.data;
+  const returnMeetup = meetups.data?.find(
+    (m) =>
+      m.booking_id === b.id &&
+      m.purpose === "return" &&
+      m.status !== "declined" &&
+      m.status !== "cancelled",
+  );
+  const initiateReturn =
+    b.viewer_role === "borrower" &&
+    b.state === "handed_over" &&
+    !!meetups.data &&
+    !returnMeetup
+      ? () => setReturnRequest((n) => n + 1)
+      : undefined;
   const refresh = (updated: Booking) => {
     booking.setData(updated);
     ledger.reload();
@@ -95,8 +112,25 @@ export function BookingView({ id }: { id: string }) {
           </p>
         </div>
 
-        {b.state !== "cancelled" && <Progress state={b.state} />}
-        <NextStep booking={b} entries={ledger.data ?? []} onChange={refresh} />
+        {b.state !== "cancelled" && (
+          <Progress
+            returnIsNext={!!initiateReturn}
+            returnStarted={!!returnMeetup}
+            state={b.state}
+          />
+        )}
+        <NextStep
+          booking={b}
+          entries={ledger.data ?? []}
+          onChange={refresh}
+          onInitiateReturn={initiateReturn}
+          returnInitiated={!!returnMeetup}
+        />
+        <BookingMeetup
+          autoOpen={isNew}
+          booking={b}
+          openRequest={returnRequest}
+        />
       </div>
 
       <aside className="space-y-6">
@@ -142,22 +176,41 @@ export function BookingView({ id }: { id: string }) {
   );
 }
 
-function Progress({ state }: { state: Booking["state"] }) {
-  const current = STEPS.findIndex((step) => step.state === state);
+function Progress({
+  state,
+  returnStarted,
+  returnIsNext,
+}: {
+  state: Booking["state"];
+  /** A return meetup has been proposed, scheduled or completed. */
+  returnStarted: boolean;
+  /** Initiating the return is the borrower's current step: its bar is highlighted. */
+  returnIsNext: boolean;
+}) {
+  const reached = (key: string) => {
+    if (key === "initiate_return")
+      return returnStarted || state === "returned" || state === "settled";
+    const order = ["confirmed", "handed_over", "returned", "settled"];
+    return order.indexOf(key) <= order.indexOf(state);
+  };
   return (
-    <ol className="grid grid-cols-4 gap-2">
-      {STEPS.map((step, index) => (
-        <li key={step.state}>
-          <div
-            className={`h-2 rounded-full ${index <= current ? "bg-forest" : "bg-line"}`}
-          />
-          <span
-            className={`mt-2 block text-xs font-bold ${index <= current ? "text-ink" : "text-muted"}`}
-          >
-            {step.label}
-          </span>
-        </li>
-      ))}
+    <ol className="grid grid-cols-5 gap-2">
+      {STEPS.map((step) => {
+        const done = reached(step.key);
+        const current = step.key === "initiate_return" && returnIsNext;
+        return (
+          <li key={step.key}>
+            <div
+              className={`h-2 rounded-full ${done ? "bg-forest" : current ? "bg-orange" : "bg-line"}`}
+            />
+            <span
+              className={`mt-2 block text-xs font-bold ${done ? "text-ink" : "text-muted"}`}
+            >
+              {step.label}
+            </span>
+          </li>
+        );
+      })}
     </ol>
   );
 }
@@ -196,10 +249,16 @@ function NextStep({
   booking: b,
   entries,
   onChange,
+  returnInitiated,
+  onInitiateReturn,
 }: {
   booking: Booking;
   entries: Schemas["LedgerEntry"][];
   onChange: (booking: Booking) => void;
+  /** A return meetup has been proposed, scheduled or completed. */
+  returnInitiated: boolean;
+  /** Set while the borrower can propose the return meetup. */
+  onInitiateReturn?: () => void;
 }) {
   const can = (action: Booking["available_actions"][number]) =>
     b.available_actions.includes(action);
@@ -246,8 +305,16 @@ function NextStep({
             of the booking.
           </p>
           <FeeRelease booking={b} />
-          {can("return") && (
-            <LinkButton href={`/returns/${b.id}`}>Record the return</LinkButton>
+          {/* The borrower first initiates the return (proposes where to give it back); only
+              then does recording the return become the next step. */}
+          {!lender && !returnInitiated ? (
+            <Button disabled={!onInitiateReturn} onClick={onInitiateReturn}>
+              Initiate return
+            </Button>
+          ) : (
+            can("return") && (
+              <LinkButton href={`/returns/${b.id}`}>Record the return</LinkButton>
+            )
           )}
         </>
       )}
