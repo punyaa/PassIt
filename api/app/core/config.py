@@ -1,3 +1,4 @@
+from datetime import timedelta
 from functools import lru_cache
 from typing import Literal
 
@@ -30,6 +31,8 @@ class Settings(BaseSettings):
     s3_bucket: str | None = None
     s3_prefix: str = "media/"
     cloudfront_domain: str | None = None
+    cloudfront_key_pair_id: str | None = None
+    cloudfront_private_key: str | None = None
     media_signed_url_ttl_seconds: int = 900
 
     mongodb_uri: str | None = None
@@ -63,6 +66,7 @@ class Settings(BaseSettings):
 
     # Business rules.
     fee_hold_minutes: int = 7 * 24 * 60  # set to 1 in staging so releases fire during demos
+    membership_period_days: int = 30  # paid Plus plans run one period, then expire to Saver
     local_release_sweep_seconds: int = 30  # 0 disables the in-process sweep
     free_listing_limit: int = 3
     max_rental_days: int = 90
@@ -79,6 +83,10 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def membership_period(self) -> timedelta:
+        return timedelta(days=self.membership_period_days)
 
 
 @lru_cache

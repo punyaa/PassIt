@@ -8,6 +8,7 @@ from uuid import UUID
 from sqlalchemy import select
 
 from app.core.db import get_sessionmaker
+from app.memberships.renewal import expire_due_memberships
 from app.models import Booking, LedgerEntry, Listing
 from app.payments import service as payment_service
 from app.transactions import service
@@ -70,5 +71,6 @@ async def run_local_sweep(interval_seconds: int) -> None:
         await asyncio.sleep(interval_seconds)
         try:
             await release_due_fees()
+            await expire_due_memberships()
         except Exception:  # keep the loop alive; the next tick retries
-            logger.exception("local fee-release sweep failed")
+            logger.exception("local release/expiry sweep failed")

@@ -13,6 +13,7 @@ from app.catalogue.router import router as catalogue_router
 from app.core.config import get_settings
 from app.media.local_router import router as local_media_router
 from app.media.router import router as media_router
+from app.memberships.router import router as memberships_router
 from app.payments.router import router as payments_router
 from app.reviews.router import router as reviews_router
 from app.schemas import HealthResponse
@@ -60,6 +61,7 @@ app.include_router(availability_router, prefix="/v1")
 app.include_router(media_router, prefix="/v1")
 app.include_router(local_media_router, prefix="/v1")
 app.include_router(bookings_router, prefix="/v1")
+app.include_router(memberships_router, prefix="/v1")
 app.include_router(payments_router, prefix="/v1")
 app.include_router(reviews_router, prefix="/v1")
 app.include_router(transactions_router, prefix="/v1")

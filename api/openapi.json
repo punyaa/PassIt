@@ -532,6 +532,11 @@
             "title": "Email",
             "type": "string"
           },
+          "plan": {
+            "default": "saver",
+            "title": "Plan",
+            "type": "string"
+          },
           "user_id": {
             "title": "User Id",
             "type": "string"
@@ -1303,6 +1308,78 @@
         "title": "MediaRecord",
         "type": "object"
       },
+      "MembershipChange": {
+        "additionalProperties": false,
+        "properties": {
+          "plan": {
+            "enum": [
+              "saver",
+              "eco-saver",
+              "mega-saver"
+            ],
+            "title": "Plan",
+            "type": "string"
+          }
+        },
+        "required": [
+          "plan"
+        ],
+        "title": "MembershipChange",
+        "type": "object"
+      },
+      "MembershipResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "current_period_end": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Period End"
+          },
+          "current_period_start": {
+            "format": "date-time",
+            "title": "Current Period Start",
+            "type": "string"
+          },
+          "perks": {
+            "$ref": "#/components/schemas/PerksResponse"
+          },
+          "plan": {
+            "enum": [
+              "saver",
+              "eco-saver",
+              "mega-saver"
+            ],
+            "title": "Plan",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "plan",
+          "status",
+          "current_period_start",
+          "current_period_end",
+          "perks"
+        ],
+        "title": "MembershipResponse",
+        "type": "object"
+      },
       "MrtStation": {
         "additionalProperties": false,
         "properties": {
@@ -1395,6 +1472,35 @@
           "created_at"
         ],
         "title": "PaymentOperationResponse",
+        "type": "object"
+      },
+      "PerksResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "delivery_credits": {
+            "title": "Delivery Credits",
+            "type": "integer"
+          },
+          "deposit_factor": {
+            "title": "Deposit Factor",
+            "type": "string"
+          },
+          "free_rescheduling": {
+            "title": "Free Rescheduling",
+            "type": "boolean"
+          },
+          "grace_days": {
+            "title": "Grace Days",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "deposit_factor",
+          "free_rescheduling",
+          "delivery_credits",
+          "grace_days"
+        ],
+        "title": "PerksResponse",
         "type": "object"
       },
       "PresignRequest": {
@@ -1691,6 +1797,22 @@
             "minLength": 8,
             "title": "Password",
             "type": "string"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "enum": [
+                  "saver",
+                  "eco-saver",
+                  "mega-saver"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan"
           }
         },
         "required": [
@@ -3520,6 +3642,124 @@
         "summary": "Presign Media Upload",
         "tags": [
           "media"
+        ]
+      }
+    },
+    "/v1/memberships/me": {
+      "get": {
+        "description": "The caller's Plus membership. 404 for pre-membership accounts, which are Saver.",
+        "operationId": "getMyMembership",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get My Membership",
+        "tags": [
+          "memberships"
+        ]
+      },
+      "post": {
+        "description": "Choose a plan. Simulated: no charge, the new period starts immediately.",
+        "operationId": "setMyMembership",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MembershipChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set My Membership",
+        "tags": [
+          "memberships"
         ]
       }
     },

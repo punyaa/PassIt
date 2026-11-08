@@ -49,7 +49,7 @@ test("marketing serves the Plus membership page", async () => {
   const page = await response.text();
   assert.match(page, /PassIt Plus/);
   assert.match(page, /Eco Saver/);
-  assert.match(page, /Mega Saver/);
+  assert.match(page, /Prime Saver/);
   assert.equal((page.match(/<header /g) ?? []).length, 1);
 });
 
@@ -70,7 +70,7 @@ test("old application links redirect to the app host with queries intact", async
 });
 
 test("application routes remain directly accessible", async () => {
-  for (const path of ["/login", "/signup", "/search", "/bookings", "/listings/new", "/dashboard/lender"]) {
+  for (const path of ["/login", "/signup", "/search", "/bookings", "/listings/new", "/dashboard/lender", "/membership"]) {
     const response = await request(path, "app.localhost:3000", {});
     assert.equal(response.status, 200, path);
     assert.equal((await response.text()).match(/<header /g)?.length, 1, path);

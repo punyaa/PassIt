@@ -11,7 +11,9 @@ Platform/B3 hand-off for S3 (see api/README.md, "AWS hand-off"):
      optionally a CloudFront distribution with Origin Access Control.
   2. Grant the ECS task role s3:PutObject and s3:GetObject on `<bucket>/<prefix>*`.
   3. `uv add --project api boto3`, set PASSIT_S3_BUCKET (+ PASSIT_CLOUDFRONT_DOMAIN).
-  4. Set PASSIT_STORAGE_BACKEND=s3 and run the upload flow once on staging.
+  4. For signed evidence URLs, add a CloudFront key pair and set
+     PASSIT_CLOUDFRONT_KEY_PAIR_ID and PASSIT_CLOUDFRONT_PRIVATE_KEY.
+  5. Set PASSIT_STORAGE_BACKEND=s3 and run the upload flow once on staging.
 """
 
 from dataclasses import dataclass
@@ -24,6 +26,21 @@ import jwt
 from app.core.config import Settings, get_settings
 
 EXTENSIONS = {"image/jpeg": ".jpg", "image/png": ".png", "video/mp4": ".mp4"}
+
+
+def _cloudfront_rsa_signer(private_key_pem: str):  # CloudFront signs with RSA/SHA1
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import padding
+
+    # Private keys in environment variables usually arrive with escaped newlines.
+    key = serialization.load_pem_private_key(
+        private_key_pem.replace("\\n", "\n").strip().encode(), password=None
+    )
+
+    def sign(message: bytes) -> bytes:
+        return key.sign(message, padding.PKCS1v15(), hashes.SHA1())
+
+    return sign
 
 
 @dataclass(frozen=True)
@@ -83,6 +100,18 @@ class S3Storage:
             config=Config(signature_version="s3v4", s3={"addressing_style": "virtual"}),
         )
         self.settings = settings
+        self.cloudfront_signer = None
+        if (
+            settings.cloudfront_domain
+            and settings.cloudfront_key_pair_id
+            and settings.cloudfront_private_key
+        ):
+            from botocore.signers import CloudFrontSigner  # noqa: PLC0415
+
+            self.cloudfront_signer = CloudFrontSigner(
+                settings.cloudfront_key_pair_id,
+                _cloudfront_rsa_signer(settings.cloudfront_private_key),
+            )
 
     def presign_upload(self, key: str, content_type: str) -> PresignedUpload:
         ttl = self.settings.media_signed_url_ttl_seconds
@@ -94,9 +123,17 @@ class S3Storage:
         return PresignedUpload(url, ttl, {"content-type": content_type})
 
     def view_url(self, key: str) -> str:
-        # TODO: condition evidence is private. If CloudFront serves media, switch this to
-        # CloudFront signed URLs (botocore.signers.CloudFrontSigner) rather than public paths.
+        if self.settings.cloudfront_domain and self.cloudfront_signer:
+            # Condition evidence is private: CloudFront signed URLs expire and cannot be
+            # forged or shared beyond their TTL.
+            return self.cloudfront_signer.generate_presigned_url(
+                f"https://{self.settings.cloudfront_domain}/{key}",
+                date_less_than=datetime.now(UTC)
+                + timedelta(seconds=self.settings.media_signed_url_ttl_seconds),
+            )
         if self.settings.cloudfront_domain:
+            # Legacy until the CloudFront key pair is provisioned: anyone holding the
+            # (unguessable) key can read the object.
             return f"https://{self.settings.cloudfront_domain}/{key}"
         return self.client.generate_presigned_url(
             "get_object",

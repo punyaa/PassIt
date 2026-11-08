@@ -37,8 +37,8 @@ from app.auth.dependencies import issue_access_token  # noqa: E402
 from app.main import app  # noqa: E402
 
 TABLES = (
-    "payment_operations, payments, reviews, checklists, media, ledger_entries, "
-    "bookings, availability, listings, users"
+    "payment_operations, payments, reviews, checklists, media, membership_events, "
+    "memberships, ledger_entries, bookings, availability, listings, users"
 )
 
 

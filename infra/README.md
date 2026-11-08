@@ -72,5 +72,5 @@ Building `demo` in the same account as `staging`: leave `create_github_oidc_prov
 ## Known limits
 
 - Cost allocation tags cannot be activated from a linked account; the organisation's management account must do it.
-- Media is served through CloudFront without signed URLs, so evidence photos are reachable by anyone holding the (unguessable) key. See the TODO in `api/app/integrations/storage.py`.
+- Media is served through CloudFront without signed URLs until a CloudFront key pair is provisioned and `PASSIT_CLOUDFRONT_KEY_PAIR_ID` / `PASSIT_CLOUDFRONT_PRIVATE_KEY` are set, so evidence photos are reachable by anyone holding the (unguessable) key. The API already signs when configured (see `api/app/integrations/storage.py`).
 - Single-AZ database, no NAT Gateway, HTTP between CloudFront and the ALB: acceptable for the prototype, not for production.

@@ -6,12 +6,14 @@ import { useState } from "react";
 
 import { Brand } from "./brand";
 import { useSession } from "./session";
+import { isPlusPlan, PLUS_PLAN_NAMES } from "@/lib/auth";
 
 const links = [
   { href: "/search", label: "Explore rentals" },
   { href: "/bookings", label: "My bookings", auth: true },
   { href: "/dashboard/borrower", label: "Savings", auth: true },
   { href: "/dashboard/lender", label: "Earnings", auth: true },
+  { href: "/membership", label: "👑 Plus", auth: true },
 ];
 
 export function AppHeader() {
@@ -52,6 +54,15 @@ export function AppHeader() {
                 {user.display_name.slice(0, 1).toUpperCase()}
               </span>
               {user.display_name.split(" ")[0]}
+              {isPlusPlan(user.plan) && user.plan !== "saver" && (
+                <Link
+                  className="rounded-full bg-orange px-2 py-1 text-xs font-extrabold text-ink"
+                  href="/membership"
+                  title="Your Plus membership"
+                >
+                  👑 {PLUS_PLAN_NAMES[user.plan]}
+                </Link>
+              )}
               <button
                 className="ml-1 text-xs font-bold text-muted underline"
                 onClick={async () => {

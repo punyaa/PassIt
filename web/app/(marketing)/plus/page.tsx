@@ -16,7 +16,7 @@ type Tier = {
 
 const TIERS: Tier[] = [
   {
-    name: "Saver",
+    name: "Eco Saver",
     price: "S$0",
     cadence: "free forever",
     blurb: "Everyday renting, free. Everything you need to borrow from your neighbours.",
@@ -30,15 +30,15 @@ const TIERS: Tier[] = [
     ],
   },
   {
-    name: "Eco Saver",
+    name: "Prime Saver",
     price: "S$6.90",
     cadence: "per month",
     blurb: "For regular renters who want cheaper deposits and first pick of new listings.",
-    cta: "Become an Eco Saver",
+    cta: "Become a Prime Saver",
     plan: "eco-saver",
     featured: true,
     benefits: [
-      "Everything in Saver",
+      "Everything in Eco Saver",
       "25% lower deposits on every booking",
       "Free rescheduling up to 24 hours before pickup",
       "Early access to new listings near you",
@@ -53,7 +53,7 @@ const TIERS: Tier[] = [
     cta: "Become a Mega Saver",
     plan: "mega-saver",
     benefits: [
-      "Everything in Eco Saver",
+      "Everything in Prime Saver",
       "Zero deposits on eligible items",
       "One free delivery every month",
       "Extra day of grace on every return",

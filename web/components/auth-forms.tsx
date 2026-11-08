@@ -5,18 +5,25 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
 import { ApiError } from "@/lib/api-client";
-import { logIn, signUp } from "@/lib/auth";
+import { isPlusPlan, logIn, PLUS_PLAN_NAMES, signUp, type PlusPlan } from "@/lib/auth";
 
 import { useSession } from "./session";
 import { Alert, Button, Card, Field, Input } from "./ui";
 
 function useAfterSignIn() {
   const router = useRouter();
-  const next = useSearchParams().get("next");
+  const params = useSearchParams();
+  const next = params.get("next");
+  const requested = params.get("plan");
+  const plan = isPlusPlan(requested) ? requested : undefined;
   const { refresh } = useSession();
   return async () => {
     await refresh();
-    router.push(next?.startsWith("/") ? next : "/search");
+    // A plan param means the user came from a Plus CTA: show them the membership
+    // they just got (signup) or let them confirm the switch (login).
+    if (next?.startsWith("/")) router.push(next);
+    else if (plan) router.push(`/membership?plan=${plan}`);
+    else router.push("/search");
   };
 }
 
@@ -78,8 +85,14 @@ export function LoginForm() {
   );
 }
 
+function useRequestedPlan(): PlusPlan | undefined {
+  const requested = useSearchParams().get("plan");
+  return isPlusPlan(requested) ? requested : undefined;
+}
+
 export function SignupForm() {
   const afterSignIn = useAfterSignIn();
+  const plan = useRequestedPlan();
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
@@ -93,7 +106,7 @@ export function SignupForm() {
     setBusy(true);
     setError(undefined);
     try {
-      await signUp(form.name.trim(), form.email, form.password);
+      await signUp(form.name.trim(), form.email, form.password, plan);
       await afterSignIn();
     } catch (caught) {
       setError(authMessage(caught));
@@ -131,6 +144,11 @@ export function SignupForm() {
           />
         </Field>
         {error && <Alert>{error}</Alert>}
+        {plan && plan !== "saver" && (
+          <p className="rounded-xl bg-sand px-4 py-3 text-center text-sm font-bold">
+            Joining PassIt Plus as {PLUS_PLAN_NAMES[plan]} — simulated, no charge.
+          </p>
+        )}
         <Button busy={busy} className="w-full" disabled={mismatch} type="submit">
           Create account
         </Button>

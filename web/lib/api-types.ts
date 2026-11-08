@@ -447,6 +447,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/memberships/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get My Membership
+         * @description The caller's Plus membership. 404 for pre-membership accounts, which are Saver.
+         */
+        get: operations["getMyMembership"];
+        put?: never;
+        /**
+         * Set My Membership
+         * @description Choose a plan. Simulated: no charge, the new period starts immediately.
+         */
+        post: operations["setMyMembership"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/payments/bookings/{booking_id}": {
         parameters: {
             query?: never;
@@ -725,6 +749,11 @@ export interface components {
             display_name: string;
             /** Email */
             email: string;
+            /**
+             * Plan
+             * @default saver
+             */
+            plan: string;
             /** User Id */
             user_id: string;
         };
@@ -989,6 +1018,37 @@ export interface components {
             /** Url */
             url: string;
         };
+        /** MembershipChange */
+        MembershipChange: {
+            /**
+             * Plan
+             * @enum {string}
+             */
+            plan: "saver" | "eco-saver" | "mega-saver";
+        };
+        /** MembershipResponse */
+        MembershipResponse: {
+            /** Current Period End */
+            current_period_end: string | null;
+            /**
+             * Current Period Start
+             * Format: date-time
+             */
+            current_period_start: string;
+            perks: components["schemas"]["PerksResponse"];
+            /**
+             * Plan
+             * @enum {string}
+             */
+            plan: "saver" | "eco-saver" | "mega-saver";
+            /** Status */
+            status: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
         /** MrtStation */
         MrtStation: {
             /** Name */
@@ -1026,6 +1086,17 @@ export interface components {
              * @enum {string}
              */
             status: "succeeded" | "failed";
+        };
+        /** PerksResponse */
+        PerksResponse: {
+            /** Delivery Credits */
+            delivery_credits: number;
+            /** Deposit Factor */
+            deposit_factor: string;
+            /** Free Rescheduling */
+            free_rescheduling: boolean;
+            /** Grace Days */
+            grace_days: number;
         };
         /** PresignRequest */
         PresignRequest: {
@@ -1156,6 +1227,8 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+            /** Plan */
+            plan?: ("saver" | "eco-saver" | "mega-saver") | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -2064,6 +2137,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PresignResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getMyMembership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    setMyMembership: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MembershipChange"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipResponse"];
                 };
             };
             /** @description Validation Error */

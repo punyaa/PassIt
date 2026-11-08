@@ -200,6 +200,33 @@ class PaymentOperation(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=NOW)
 
 
+# --- Plus Membership ---------------------------------------------------------
+
+
+class Membership(Base):
+    __tablename__ = "memberships"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=UUID_DEFAULT)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), unique=True)
+    plan: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(Text)
+    current_period_start: Mapped[datetime] = mapped_column(server_default=NOW)
+    current_period_end: Mapped[datetime | None]
+    created_at: Mapped[datetime] = mapped_column(server_default=NOW)
+    updated_at: Mapped[datetime] = mapped_column(server_default=NOW)
+
+
+class MembershipEvent(Base):
+    __tablename__ = "membership_events"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=UUID_DEFAULT)
+    membership_id: Mapped[UUID] = mapped_column(ForeignKey("memberships.id"))
+    event: Mapped[str] = mapped_column(Text)
+    from_plan: Mapped[str | None] = mapped_column(Text)
+    to_plan: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(server_default=NOW)
+
+
 # --- Date ranges -------------------------------------------------------------
 
 

@@ -19,6 +19,8 @@ from app.core.db import DbSession
 from app.integrations.scheduler import get_scheduler
 from app.integrations.storage import get_storage
 from app.media.service import attach_media
+from app.memberships.plans import deposit_for
+from app.memberships.service import plan_for
 from app.models import Availability, Checklist, Listing, Media, Review, User, inclusive_range
 from app.models import Booking as BookingRow
 from app.payments import service as payment_service
@@ -228,7 +230,7 @@ async def create_booking(request: BookingCreate, user: CurrentUser, db: DbSessio
         period=inclusive_range(start, end),
         duration_type=request.duration_type,
         fee=price_for(listing, request.duration_type, start, end),
-        deposit=listing.deposit,
+        deposit=deposit_for(await plan_for(db, user.id), listing.deposit),
         state="confirmed",
     )
     db.add(booking)

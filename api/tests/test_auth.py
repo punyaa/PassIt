@@ -25,7 +25,11 @@ async def test_signup_starts_a_cookie_session(client: httpx.AsyncClient) -> None
 
     me = await client.get("/auth/me")
     assert me.status_code == 200
-    assert me.json() == {**response.json(), "email": "ada@example.com"}  # stored lower-cased
+    assert me.json() == {
+        **response.json(),
+        "email": "ada@example.com",  # stored lower-cased
+        "plan": "saver",  # new accounts start on the free plan
+    }
 
 
 async def test_password_is_hashed_never_stored(client: httpx.AsyncClient, sql) -> None:
