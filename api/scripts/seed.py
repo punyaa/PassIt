@@ -42,8 +42,8 @@ async def reset() -> None:
     async with get_sessionmaker()() as db:
         await db.execute(
             text(
-                "TRUNCATE saved_listings, reviews, checklists, media, ledger_entries, bookings, "
-                "availability, listings, users CASCADE"
+                "TRUNCATE meetup_events, meetups, saved_listings, reviews, checklists, media, "
+                "ledger_entries, bookings, availability, listings, users CASCADE"
             )
         )
         await db.commit()

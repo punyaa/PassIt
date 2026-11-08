@@ -36,4 +36,11 @@ def test_expected_contract_operations_are_registered() -> None:
         "settleBooking",
         "getBookingChecklists",
         "listReviews",
+        "createMeetup",
+        "listMeetups",
+        "getMeetup",
+        "counterMeetup",
+        "acceptMeetup",
+        "declineMeetup",
+        "cancelMeetup",
     } <= operations

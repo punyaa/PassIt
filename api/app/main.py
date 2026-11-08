@@ -15,6 +15,7 @@ from app.catalogue.saved import router as saved_router
 from app.core.config import get_settings
 from app.media.local_router import router as local_media_router
 from app.media.router import router as media_router
+from app.meetups.router import router as meetups_router
 from app.profiles.router import router as profiles_router
 from app.reviews.router import router as reviews_router
 from app.schemas import HealthResponse
@@ -68,3 +69,4 @@ app.include_router(transactions_router, prefix="/v1")
 
 app.include_router(profiles_router, prefix="/v1")
 app.include_router(saved_router, prefix="/v1")
+app.include_router(meetups_router, prefix="/v1")

@@ -60,6 +60,46 @@ let windows: Schemas["DateWindow"][] = [
   { start_date: "2026-01-01", end_date: "2027-12-31" },
 ];
 const saved = new Set<string>();
+const borrower = { id: booking.borrower_id, name: "Ben Lim" };
+let meetups: Schemas["Meetup"][] = [];
+function meetupEvent(
+  author: { id: string; name: string },
+  kind: Schemas["MeetupEvent"]["kind"],
+  terms?: Schemas["MeetupTerms"],
+  message?: string | null,
+): Schemas["MeetupEvent"] {
+  return {
+    id: crypto.randomUUID(),
+    author_id: author.id,
+    author_display_name: author.name,
+    kind,
+    meet_at: terms?.meet_at ?? null,
+    location: terms?.location ?? null,
+    price: terms ? Number(terms.price).toFixed(2) : null,
+    message: message ?? terms?.message ?? null,
+    created_at: new Date().toISOString(),
+  };
+}
+/** The mock user owns the only listing, so they always act as the lender. */
+function updateMeetup(
+  id: string,
+  change: (meetup: Schemas["Meetup"]) => void,
+): Schemas["Meetup"] | undefined {
+  const meetup = meetups.find((m) => m.id === id);
+  if (meetup) {
+    change(meetup);
+    meetup.updated_at = new Date().toISOString();
+    const pending = meetup.status === "pending";
+    const myTurn = pending && meetup.proposed_by !== user.user_id;
+    meetup.awaiting_role = pending ? (myTurn ? "lender" : "borrower") : null;
+    meetup.available_actions = myTurn
+      ? ["accept", "counter", "decline"]
+      : pending || meetup.status === "accepted"
+        ? ["cancel"]
+        : [];
+  }
+  return meetup;
+}
 const uploads = new Map<string, string>();
 const unauthorized = () =>
   HttpResponse.json({ detail: "Sign in required" }, { status: 401 });
@@ -215,4 +255,73 @@ export const handlers = [
   ),
   http.get("*/v1/bookings/:id", () => HttpResponse.json(booking)),
   http.post("*/v1/bookings", () => HttpResponse.json(booking, { status: 201 })),
+  http.get("*/v1/meetups", () =>
+    signedIn ? HttpResponse.json(meetups) : unauthorized(),
+  ),
+  http.post("*/v1/meetups", async ({ request }) => {
+    if (!signedIn) return unauthorized();
+    // Mock mode has one account, so a proposal arrives as if from a borrower.
+    const terms = (await request.json()) as Schemas["MeetupCreate"];
+    const now = new Date().toISOString();
+    const meetup: Schemas["Meetup"] = {
+      id: crypto.randomUUID(),
+      listing_id: listing.id,
+      listing_title: listing.title,
+      borrower_id: borrower.id,
+      borrower_display_name: borrower.name,
+      lender_id: user.user_id,
+      lender_display_name: user.display_name,
+      status: "pending",
+      meet_at: terms.meet_at,
+      location: terms.location,
+      price: Number(terms.price).toFixed(2),
+      proposed_by: borrower.id,
+      awaiting_role: "lender",
+      viewer_role: "lender",
+      available_actions: ["accept", "counter", "decline"],
+      events: [meetupEvent(borrower, "propose", terms)],
+      created_at: now,
+      updated_at: now,
+    };
+    meetups = [meetup, ...meetups];
+    return HttpResponse.json(meetup, { status: 201 });
+  }),
+  http.post("*/v1/meetups/:id/counter", async ({ params, request }) => {
+    if (!signedIn) return unauthorized();
+    const terms = (await request.json()) as Schemas["MeetupTerms"];
+    const me = { id: user.user_id, name: user.display_name };
+    const meetup = updateMeetup(String(params.id), (m) => {
+      Object.assign(m, {
+        meet_at: terms.meet_at,
+        location: terms.location,
+        price: Number(terms.price).toFixed(2),
+        proposed_by: me.id,
+      });
+      m.events.push(meetupEvent(me, "counter", terms));
+    });
+    return HttpResponse.json(meetup);
+  }),
+  http.post("*/v1/meetups/:id/:action", async ({ params, request }) => {
+    if (!signedIn) return unauthorized();
+    const action = params.action as "accept" | "decline" | "cancel";
+    const note = (await request.json().catch(() => null)) as
+      Schemas["MeetupNote"] | null;
+    const status = {
+      accept: "accepted",
+      decline: "declined",
+      cancel: "cancelled",
+    }[action] as Schemas["Meetup"]["status"];
+    const meetup = updateMeetup(String(params.id), (m) => {
+      m.status = status;
+      m.events.push(
+        meetupEvent(
+          { id: user.user_id, name: user.display_name },
+          action,
+          undefined,
+          note?.message,
+        ),
+      );
+    });
+    return HttpResponse.json(meetup);
+  }),
 ];

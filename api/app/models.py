@@ -33,6 +33,9 @@ ledger_type = ENUM(
     create_type=False,
 )
 media_stage = ENUM("listing", "handover", "return", name="media_stage", create_type=False)
+meetup_status = ENUM(
+    "pending", "accepted", "declined", "cancelled", name="meetup_status", create_type=False
+)
 
 Money = Numeric(10, 2)
 UUID_DEFAULT = text("uuid_generate_v4()")
@@ -178,6 +181,39 @@ class SavedListing(Base):
 
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), primary_key=True)
     listing_id: Mapped[UUID] = mapped_column(ForeignKey("listings.id"), primary_key=True)
+    created_at: Mapped[datetime] = mapped_column(server_default=NOW)
+
+
+# --- Meetups -----------------------------------------------------------------
+
+
+class Meetup(Base):
+    __tablename__ = "meetups"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=UUID_DEFAULT)
+    listing_id: Mapped[UUID] = mapped_column(ForeignKey("listings.id"))
+    borrower_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    lender_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    status: Mapped[str] = mapped_column(meetup_status, server_default=text("'pending'"))
+    meet_at: Mapped[datetime]
+    location: Mapped[str] = mapped_column(Text)
+    price: Mapped[Decimal] = mapped_column(Money)
+    proposed_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(server_default=NOW)
+    updated_at: Mapped[datetime] = mapped_column(server_default=NOW)
+
+
+class MeetupEvent(Base):
+    __tablename__ = "meetup_events"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, server_default=UUID_DEFAULT)
+    meetup_id: Mapped[UUID] = mapped_column(ForeignKey("meetups.id"))
+    author_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    kind: Mapped[str] = mapped_column(Text)
+    meet_at: Mapped[datetime | None]
+    location: Mapped[str | None] = mapped_column(Text)
+    price: Mapped[Decimal | None] = mapped_column(Money)
+    message: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(server_default=NOW)
 
 

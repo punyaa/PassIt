@@ -1348,6 +1348,361 @@
         "title": "MediaRecord",
         "type": "object"
       },
+      "Meetup": {
+        "additionalProperties": false,
+        "properties": {
+          "available_actions": {
+            "items": {
+              "enum": [
+                "accept",
+                "counter",
+                "decline",
+                "cancel"
+              ],
+              "type": "string"
+            },
+            "title": "Available Actions",
+            "type": "array"
+          },
+          "awaiting_role": {
+            "anyOf": [
+              {
+                "enum": [
+                  "borrower",
+                  "lender"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Who must respond next; null once the meetup is no longer open.",
+            "title": "Awaiting Role"
+          },
+          "borrower_display_name": {
+            "title": "Borrower Display Name",
+            "type": "string"
+          },
+          "borrower_id": {
+            "format": "uuid",
+            "title": "Borrower Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/MeetupEvent"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "lender_display_name": {
+            "title": "Lender Display Name",
+            "type": "string"
+          },
+          "lender_id": {
+            "format": "uuid",
+            "title": "Lender Id",
+            "type": "string"
+          },
+          "listing_id": {
+            "format": "uuid",
+            "title": "Listing Id",
+            "type": "string"
+          },
+          "listing_title": {
+            "title": "Listing Title",
+            "type": "string"
+          },
+          "location": {
+            "title": "Location",
+            "type": "string"
+          },
+          "meet_at": {
+            "format": "date-time",
+            "title": "Meet At",
+            "type": "string"
+          },
+          "price": {
+            "title": "Price",
+            "type": "string"
+          },
+          "proposed_by": {
+            "format": "uuid",
+            "title": "Proposed By",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "accepted",
+              "declined",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "viewer_role": {
+            "enum": [
+              "borrower",
+              "lender"
+            ],
+            "title": "Viewer Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "listing_id",
+          "listing_title",
+          "borrower_id",
+          "borrower_display_name",
+          "lender_id",
+          "lender_display_name",
+          "status",
+          "meet_at",
+          "location",
+          "price",
+          "proposed_by",
+          "awaiting_role",
+          "viewer_role",
+          "available_actions",
+          "events",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "Meetup",
+        "type": "object"
+      },
+      "MeetupCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "listing_id": {
+            "format": "uuid",
+            "title": "Listing Id",
+            "type": "string"
+          },
+          "location": {
+            "description": "Where to meet.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Location",
+            "type": "string"
+          },
+          "meet_at": {
+            "description": "When to meet, as an ISO timestamp with an offset.",
+            "format": "date-time",
+            "title": "Meet At",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Offered price in SGD.",
+            "title": "Price"
+          }
+        },
+        "required": [
+          "meet_at",
+          "location",
+          "price",
+          "listing_id"
+        ],
+        "title": "MeetupCreate",
+        "type": "object"
+      },
+      "MeetupEvent": {
+        "additionalProperties": false,
+        "properties": {
+          "author_display_name": {
+            "title": "Author Display Name",
+            "type": "string"
+          },
+          "author_id": {
+            "format": "uuid",
+            "title": "Author Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "propose",
+              "counter",
+              "accept",
+              "decline",
+              "cancel"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "meet_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meet At"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price"
+          }
+        },
+        "required": [
+          "id",
+          "author_id",
+          "author_display_name",
+          "kind",
+          "created_at"
+        ],
+        "title": "MeetupEvent",
+        "type": "object"
+      },
+      "MeetupNote": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          }
+        },
+        "title": "MeetupNote",
+        "type": "object"
+      },
+      "MeetupTerms": {
+        "additionalProperties": false,
+        "properties": {
+          "location": {
+            "description": "Where to meet.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Location",
+            "type": "string"
+          },
+          "meet_at": {
+            "description": "When to meet, as an ISO timestamp with an offset.",
+            "format": "date-time",
+            "title": "Meet At",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "description": "Offered price in SGD.",
+            "title": "Price"
+          }
+        },
+        "required": [
+          "meet_at",
+          "location",
+          "price"
+        ],
+        "title": "MeetupTerms",
+        "type": "object"
+      },
       "MrtStation": {
         "additionalProperties": false,
         "properties": {
@@ -3873,6 +4228,576 @@
         "summary": "Presign Media Upload",
         "tags": [
           "media"
+        ]
+      }
+    },
+    "/v1/meetups": {
+      "get": {
+        "description": "The caller's meetups as borrower, lender or both, most recently updated first.",
+        "operationId": "listMeetups",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "borrower",
+                    "lender"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "pending",
+                    "accepted",
+                    "declined",
+                    "cancelled"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Meetup"
+                  },
+                  "title": "Response Listmeetups",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Meetups",
+        "tags": [
+          "meetups"
+        ]
+      },
+      "post": {
+        "description": "A borrower proposes a time, place and price to the lender of an active listing.",
+        "operationId": "createMeetup",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetupCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meetup"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "description": "Proposing to meet about your own listing"
+          },
+          "404": {
+            "description": "Listing not found or not active"
+          },
+          "409": {
+            "description": "You already have an open proposal for this listing"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Meetup",
+        "tags": [
+          "meetups"
+        ]
+      }
+    },
+    "/v1/meetups/{meetup_id}": {
+      "get": {
+        "operationId": "getMeetup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meetup_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Meetup Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meetup"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Meetup",
+        "tags": [
+          "meetups"
+        ]
+      }
+    },
+    "/v1/meetups/{meetup_id}/accept": {
+      "post": {
+        "description": "Agree to the terms on the table. Both sides have now agreed: the meeting is scheduled.",
+        "operationId": "acceptMeetup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meetup_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Meetup Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/MeetupNote"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Note"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meetup"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Accept Meetup",
+        "tags": [
+          "meetups"
+        ]
+      }
+    },
+    "/v1/meetups/{meetup_id}/cancel": {
+      "post": {
+        "description": "Withdraw your own open offer, or call off a scheduled meeting before it happens.",
+        "operationId": "cancelMeetup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meetup_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Meetup Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/MeetupNote"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Note"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meetup"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Meetup",
+        "tags": [
+          "meetups"
+        ]
+      }
+    },
+    "/v1/meetups/{meetup_id}/counter": {
+      "post": {
+        "description": "Replace the terms on the table; the other person now has to respond.",
+        "operationId": "counterMeetup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meetup_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Meetup Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MeetupTerms"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meetup"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Counter Meetup",
+        "tags": [
+          "meetups"
+        ]
+      }
+    },
+    "/v1/meetups/{meetup_id}/decline": {
+      "post": {
+        "description": "Turn down the offer and close the negotiation.",
+        "operationId": "declineMeetup",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "meetup_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Meetup Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "passit_session",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passit Session"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/MeetupNote"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Note"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Meetup"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Decline Meetup",
+        "tags": [
+          "meetups"
         ]
       }
     },

@@ -505,6 +505,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/meetups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Meetups
+         * @description The caller's meetups as borrower, lender or both, most recently updated first.
+         */
+        get: operations["listMeetups"];
+        put?: never;
+        /**
+         * Create Meetup
+         * @description A borrower proposes a time, place and price to the lender of an active listing.
+         */
+        post: operations["createMeetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/meetups/{meetup_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Meetup */
+        get: operations["getMeetup"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/meetups/{meetup_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Meetup
+         * @description Agree to the terms on the table. Both sides have now agreed: the meeting is scheduled.
+         */
+        post: operations["acceptMeetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/meetups/{meetup_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Meetup
+         * @description Withdraw your own open offer, or call off a scheduled meeting before it happens.
+         */
+        post: operations["cancelMeetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/meetups/{meetup_id}/counter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Counter Meetup
+         * @description Replace the terms on the table; the other person now has to respond.
+         */
+        post: operations["counterMeetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/meetups/{meetup_id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decline Meetup
+         * @description Turn down the offer and close the negotiation.
+         */
+        post: operations["declineMeetup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/reviews": {
         parameters: {
             query?: never;
@@ -1082,6 +1203,163 @@ export interface components {
             stage: "listing" | "handover" | "return" | "avatar";
             /** Url */
             url: string;
+        };
+        /** Meetup */
+        Meetup: {
+            /** Available Actions */
+            available_actions: ("accept" | "counter" | "decline" | "cancel")[];
+            /**
+             * Awaiting Role
+             * @description Who must respond next; null once the meetup is no longer open.
+             */
+            awaiting_role: ("borrower" | "lender") | null;
+            /** Borrower Display Name */
+            borrower_display_name: string;
+            /**
+             * Borrower Id
+             * Format: uuid
+             */
+            borrower_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Events */
+            events: components["schemas"]["MeetupEvent"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Lender Display Name */
+            lender_display_name: string;
+            /**
+             * Lender Id
+             * Format: uuid
+             */
+            lender_id: string;
+            /**
+             * Listing Id
+             * Format: uuid
+             */
+            listing_id: string;
+            /** Listing Title */
+            listing_title: string;
+            /** Location */
+            location: string;
+            /**
+             * Meet At
+             * Format: date-time
+             */
+            meet_at: string;
+            /** Price */
+            price: string;
+            /**
+             * Proposed By
+             * Format: uuid
+             */
+            proposed_by: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "accepted" | "declined" | "cancelled";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Viewer Role
+             * @enum {string}
+             */
+            viewer_role: "borrower" | "lender";
+        };
+        /** MeetupCreate */
+        MeetupCreate: {
+            /**
+             * Listing Id
+             * Format: uuid
+             */
+            listing_id: string;
+            /**
+             * Location
+             * @description Where to meet.
+             */
+            location: string;
+            /**
+             * Meet At
+             * Format: date-time
+             * @description When to meet, as an ISO timestamp with an offset.
+             */
+            meet_at: string;
+            /** Message */
+            message?: string | null;
+            /**
+             * Price
+             * @description Offered price in SGD.
+             */
+            price: number | string;
+        };
+        /** MeetupEvent */
+        MeetupEvent: {
+            /** Author Display Name */
+            author_display_name: string;
+            /**
+             * Author Id
+             * Format: uuid
+             */
+            author_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "propose" | "counter" | "accept" | "decline" | "cancel";
+            /** Location */
+            location?: string | null;
+            /** Meet At */
+            meet_at?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Price */
+            price?: string | null;
+        };
+        /** MeetupNote */
+        MeetupNote: {
+            /** Message */
+            message?: string | null;
+        };
+        /** MeetupTerms */
+        MeetupTerms: {
+            /**
+             * Location
+             * @description Where to meet.
+             */
+            location: string;
+            /**
+             * Meet At
+             * Format: date-time
+             * @description When to meet, as an ISO timestamp with an offset.
+             */
+            meet_at: string;
+            /** Message */
+            message?: string | null;
+            /**
+             * Price
+             * @description Offered price in SGD.
+             */
+            price: number | string;
         };
         /** MrtStation */
         MrtStation: {
@@ -2300,6 +2578,278 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PresignResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listMeetups: {
+        parameters: {
+            query?: {
+                role?: ("borrower" | "lender") | null;
+                status?: ("pending" | "accepted" | "declined" | "cancelled") | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meetup"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createMeetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeetupCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meetup"];
+                };
+            };
+            /** @description Proposing to meet about your own listing */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Listing not found or not active */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description You already have an open proposal for this listing */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getMeetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meetup_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meetup"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    acceptMeetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meetup_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MeetupNote"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meetup"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancelMeetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meetup_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MeetupNote"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meetup"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    counterMeetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meetup_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeetupTerms"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meetup"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    declineMeetup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                meetup_id: string;
+            };
+            cookie?: {
+                passit_session?: string | null;
+            };
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["MeetupNote"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Meetup"];
                 };
             };
             /** @description Validation Error */
