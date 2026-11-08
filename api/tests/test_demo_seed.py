@@ -17,14 +17,16 @@ from scripts.seed import reset, run
 
 
 def test_demo_assets_and_scenarios_are_self_contained():
-    assert len(ITEMS) == 40 and len(PEOPLE) == 20 and len(BOOKING_PLAN) == 15
-    assert len({item["slug"] for item in ITEMS}) == 40
-    assert Counter(item["owner"] for item in ITEMS) == {i: 2 for i in range(20)}
-    assert len({person["bio"] for person in PEOPLE}) == 20
+    assert (len(ITEMS), len(PEOPLE), len(BOOKING_PLAN)) == (43, 22, 17)
+    assert len({item["slug"] for item in ITEMS}) == len(ITEMS)
+    assert Counter(item["owner"] for item in ITEMS) == {**dict.fromkeys(range(20), 2), 20: 3}
+    assert len({person["bio"] for person in PEOPLE}) == len(PEOPLE)
     assert sum(len(item["photos"]) > 1 for item in ITEMS) == 8
     for item in ITEMS:
         assert item["source_page"].startswith("https://")
-        assert len(item["description"]) > 180
+        assert len(item["description"]) > (
+            0 if item["slug"] in {"vacuum-cleaner", "toolbox"} else 180
+        )
         for photo in item["photos"]:
             assert photo["source_url"].startswith("https://")
             with Image.open(DEMO_ROOT / "media" / photo["file"]) as image:
@@ -52,16 +54,19 @@ async def test_demo_reset_preserves_lifecycle_and_populates_new_screens(
     capsys.readouterr()  # Demo tokens are an operator convenience, not test output.
     today, now = date.today(), datetime.now(UTC)
     async with get_sessionmaker()() as db:
-        assert await db.scalar(select(func.count()).select_from(User)) == 20
-        assert await db.scalar(select(func.count()).select_from(Listing)) == 40
-        assert await db.scalar(select(func.count()).select_from(Booking)) == 15
+        assert await db.scalar(select(func.count()).select_from(User)) == len(PEOPLE)
+        assert await db.scalar(select(func.count()).select_from(Listing)) == len(ITEMS)
+        assert await db.scalar(select(func.count()).select_from(Booking)) == len(BOOKING_PLAN)
         assert await db.scalar(select(func.count()).select_from(SavedListing)) == 8
         users = list(await db.scalars(select(User)))
-        assert all(user.bio and user.created_at < now for user in users)
+        assert all(user.created_at < now for user in users)
+        assert [user.display_name for user in users if not user.bio] == ["Alice"]
         aisha = next(user for user in users if user.email == "seed-01@passit.demo")
         headers = {"authorization": f"Bearer {issue_access_token(aisha.id)}"}
+        max_lender = next(user for user in users if user.display_name == "Max")
+        max_headers = {"authorization": f"Bearer {issue_access_token(max_lender.id)}"}
         listings = list(await db.scalars(select(Listing)))
-        assert Counter(item.status for item in listings) == {"active": 38, "paused": 2}
+        assert Counter(item.status for item in listings) == {"active": 41, "paused": 2}
         listing_media = list(await db.scalars(select(Media).where(Media.stage == "listing")))
         assert len(listing_media) == sum(len(item["photos"]) for item in ITEMS)
         bookings = list(await db.scalars(select(Booking)))
@@ -69,7 +74,7 @@ async def test_demo_reset_preserves_lifecycle_and_populates_new_screens(
             "confirmed": 3,
             "handed_over": 3,
             "returned": 2,
-            "settled": 5,
+            "settled": 7,
             "cancelled": 2,
         }
         for booking in bookings:
@@ -102,11 +107,11 @@ async def test_demo_reset_preserves_lifecycle_and_populates_new_screens(
             if booking.state == "settled":
                 assert any(entry.entry_type == "release_fee" for entry in entries)
         reviews = list(await db.scalars(select(Review)))
-        assert len(reviews) == len({review.comment for review in reviews}) == 10
+        assert len(reviews) == len({review.comment for review in reviews}) == 11
         assert all(review.created_at < now for review in reviews)
 
     public = (await client.get("/listings", params={"limit": 50})).json()
-    assert len(public) == 38 and all(item["photo_urls"] for item in public)
+    assert len(public) == 41 and all(item["photo_urls"] for item in public)
     assert all(len(item["thumbnail_urls"]) == len(item["photo_urls"]) for item in public)
     saved = (await client.get("/saved-listings", headers=headers)).json()
     assert len(saved) == 3
@@ -116,6 +121,10 @@ async def test_demo_reset_preserves_lifecycle_and_populates_new_screens(
     assert any(rental["state"] == "handed_over" for rental in rentals)
     assert any(rental["state"] == "returned" for rental in rentals)
     assert any(rental["state"] == "settled" for rental in rentals)
+    max_dashboard = (await client.get("/dashboard?role=lender", headers=max_headers)).json()
+    assert max_dashboard["completed_rentals"] == 2
+    assert Decimal(max_dashboard["earnings"]) == Decimal("62.40")
+    assert Decimal(max_dashboard["pending_release"]) == 0
     await reset()
     async with get_sessionmaker()() as db:
         assert await db.scalar(select(func.count()).select_from(User)) == 0

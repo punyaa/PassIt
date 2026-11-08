@@ -55,7 +55,7 @@
     "lender_review": null
   },
   {
-    "item": "switch",
+    "item": "racing-wheel",
     "borrower": 1,
     "state": "handed_over",
     "start": -3,
@@ -163,5 +163,27 @@
     "damage": null,
     "review": null,
     "lender_review": null
+  },
+  {
+    "item": "vacuum-cleaner",
+    "borrower": 21,
+    "state": "settled",
+    "start": -12,
+    "end": -10,
+    "review": "Item was in perfect condition. Made my work so easy!!",
+    "lender_review": null,
+    "severity": null,
+    "damage": null
+  },
+  {
+    "item": "induction-cooktop",
+    "borrower": 0,
+    "state": "settled",
+    "start": -14,
+    "end": -12,
+    "review": null,
+    "lender_review": null,
+    "severity": null,
+    "damage": null
   }
 ]

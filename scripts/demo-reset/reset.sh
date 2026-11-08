@@ -5,7 +5,7 @@
 #   AWS_PROFILE=nus-sso scripts/demo-reset/reset.sh staging
 #
 # Runs a one-off ECS task inside the VPC (the database is private): it migrates, truncates
-# every PassIt table, and re-runs the seed (20 users, 40 listings, 15 bookings). Target: under
+# every PassIt table, and re-runs the seed (22 users, 43 listings, 17 bookings). Target: under
 # five minutes, then confirms the site is healthy and serving listings.
 set -euo pipefail
 

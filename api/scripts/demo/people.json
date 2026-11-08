@@ -98,5 +98,15 @@
     "name": "Tom Chan",
     "bio": "Family holidays and road trips. Please check luggage sizes and car compatibility before booking.",
     "mrt_station": "MacPherson"
+  },
+  {
+    "name": "Max",
+    "bio": "Have a bunch of things in the house I don't use often. Thought might help someone, cheers :)",
+    "mrt_station": "Clementi"
+  },
+  {
+    "name": "Alice",
+    "bio": null,
+    "mrt_station": "Clementi"
   }
 ]

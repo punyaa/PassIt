@@ -49,10 +49,10 @@
     "description": "Small folding burner for boiling water and simple meals outdoors. Packed in its carry case for easy transport. Fuel is not included, so bring a compatible canister and check the connection with me at pickup. Please let the burner cool completely before packing it away.",
     "category": "Outdoor",
     "condition": "Good",
-    "price_day": "6",
-    "price_week": "25",
+    "price_day": "4",
+    "price_week": "14",
     "price_month": null,
-    "deposit": "40",
+    "deposit": "25",
     "owner": 1,
     "mrt_station": "Bedok",
     "check": "Burner and case present",
@@ -66,26 +66,26 @@
     "source_page": "https://www.carousell.sg/hobbies-lifestyle/travel-essentials-accessories/portable-camping-stove/q-1741/"
   },
   {
-    "slug": "snorkel",
-    "title": "Decathlon Easybreath snorkel mask",
-    "description": "Full-face snorkel mask for relaxed surface swimming. Strap and seal are in good condition, with a few storage marks. Please check the fit before your trip; this is not a scuba-diving mask. I rinse and dry it between rentals. Return it rinsed with fresh water, without sand in the seal.",
+    "slug": "camping-wagon",
+    "title": "Naturehike TC02 folding camping wagon",
+    "description": "Foldable wagon for hauling tents, coolers and bags from the car to a campsite. The fabric tub folds into the frame for transport. We can check the wheels and handle at pickup. Please empty it and brush off any dirt before returning.",
     "category": "Outdoor",
-    "condition": "Fair",
-    "price_day": "5",
-    "price_week": "20",
+    "condition": "Good",
+    "price_day": "8",
+    "price_week": "28",
     "price_month": null,
-    "deposit": "30",
+    "deposit": "60",
     "owner": 1,
     "mrt_station": "Bedok",
-    "check": "Mask strap and seal checked",
+    "check": "Frame, wheels and pull handle checked",
     "status": "active",
     "photos": [
       {
-        "file": "snorkel-1.jpg",
-        "source_url": "https://media.karousell.com/media/photos/products/2026/8/17/decathlon_easybreath_snorkling_1786951627_0b4e7b35_thumbnail.jpg"
+        "file": "camping-wagon-1.jpg",
+        "source_url": "https://media.karousell.com/media/photos/products/2024/1/8/naturehike_tc02_wagon_trolley_1704720491_d47b8260_progressive.jpg"
       }
     ],
-    "source_page": "https://www.carousell.sg/snorkle/q/"
+    "source_page": "https://www.carousell.com.my/p/naturehike-tc02-wagon-trolley-1277756920/"
   },
   {
     "slug": "kayak",
@@ -170,26 +170,26 @@
     "source_page": "https://www.carousell.sg/audio/soundbars-speakers-amplifiers/event-speaker/q-5747/"
   },
   {
-    "slug": "lights",
-    "title": "20m warm-white fairy lights",
-    "description": "Warm-white string lights for a birthday backdrop or cosy dinner setup. Comes with its plug and controller. Tested before each handover; please unroll the wire gently rather than pulling a tight knot. Decorations and mounting hooks are not included. Return loosely coiled so the next person can set up easily.",
+    "slug": "stage-light",
+    "title": "MUSYSIC LED PAR stage light",
+    "description": "Compact colour wash light for a DJ corner, dance floor or party backdrop. Includes its mounting bracket and power lead. We can test the built-in colour modes at pickup. Bring your own DMX controller and cable if you want to run it from a lighting desk.",
     "category": "Events",
     "condition": "Good",
-    "price_day": "5",
-    "price_week": "20",
+    "price_day": "10",
+    "price_week": "35",
     "price_month": null,
-    "deposit": "20",
+    "deposit": "50",
     "owner": 3,
     "mrt_station": "Serangoon",
-    "check": "Lights and controller tested",
+    "check": "Light, power lead and bracket checked",
     "status": "active",
     "photos": [
       {
-        "file": "lights-1.jpg",
-        "source_url": "https://media.karousell.com/media/photos/products/2021/10/31/ollny_fairy_lights_20m_200_led_1635691431_f374bd1f_progressive.jpg"
+        "file": "stage-light-1.jpg",
+        "source_url": "https://www.musysic.com/cdn/shop/files/2_d11aa19a-513f-4796-84ca-47f8072e2c91.jpg?v=1770826165"
       }
     ],
-    "source_page": "https://www.carousell.sg/p/ollny-fairy-lights-20m-200-led-warm-white-plug-in-string-lights-mains-powered-with-remote-control-timer-8-modes-for-bedroom-indoor-outdoor-garden-christmas-decorations-1122894911/"
+    "source_page": "https://www.musysic.com/products/mu-l100ii-led-par-light"
   },
   {
     "slug": "chafing",
@@ -267,10 +267,10 @@
     "description": "Two folding chairs for extra guests or a home gathering. Brown seats with a metal frame and normal signs of use. They fold flat, so please bring enough space to carry both. No delivery. We can check the hinges at pickup; please return the seats wiped down.",
     "category": "Events",
     "condition": "Good",
-    "price_day": "20",
-    "price_week": "80",
-    "price_month": "220",
-    "deposit": "100",
+    "price_day": "5",
+    "price_week": "18",
+    "price_month": "40",
+    "deposit": "35",
     "owner": 5,
     "mrt_station": "Bishan",
     "check": "Both chair hinges checked",
@@ -534,26 +534,26 @@
     "source_page": "https://www.carousell.sg/p/baby-carrier-1459700854/"
   },
   {
-    "slug": "toy-car",
-    "title": "Little Lot first ride-on toy car",
-    "description": "Small ride-on toy for indoor play, with steering wheel and a low seat. Normal wheel and body marks from use. This is a push-along toy, not an electric vehicle. Please check it suits your child at collection. Wipe down the seat and wheels before returning.",
+    "slug": "high-chair",
+    "title": "Joie Mimzy Snacker folding high chair",
+    "description": "Folding high chair for family visits and short stays. Includes the removable tray and harness. We can check the tray latch and show how the frame folds at pickup. Please wipe down the seat and tray before returning.",
     "category": "Baby & kids",
     "condition": "Good",
-    "price_day": "10",
-    "price_week": "40",
-    "price_month": null,
-    "deposit": "80",
+    "price_day": "5",
+    "price_week": "18",
+    "price_month": "45",
+    "deposit": "50",
     "owner": 11,
     "mrt_station": "Hougang",
-    "check": "Wheels and steering wheel checked",
+    "check": "Tray latch, harness and frame checked",
     "status": "active",
     "photos": [
       {
-        "file": "toy-car-1.jpg",
-        "source_url": "https://media.karousell.com/media/photos/products/2026/9/30/little_lot_my_first_ride_on_to_1790754516_7709b037_progressive.jpg"
+        "file": "high-chair-1.jpg",
+        "source_url": "https://toycra.com/cdn/shop/products/Joie-Mimzy-Snacker-High-Chair-High-Chairs-Joie-Toycra.jpg?v=1654189794&width=800"
       }
     ],
-    "source_page": "https://www.carousell.sg/p/little-lot-my-first-ride-on-toy-car-1465032833/"
+    "source_page": "https://toycra.com/products/joie-mimzy-snacker-high-chair"
   },
   {
     "slug": "fujifilm",
@@ -583,10 +583,10 @@
     "description": "Compact projector for a casual movie night in a dark room. Remote and power lead included; bring your own source device and check the input connection before booking. This is a budget home projector rather than a daylight presentation unit. Happy to demonstrate the image at pickup.",
     "category": "Electronics",
     "condition": "Good",
-    "price_day": "22",
-    "price_week": "90",
-    "price_month": "250",
-    "deposit": "250",
+    "price_day": "10",
+    "price_week": "35",
+    "price_month": "65",
+    "deposit": "65",
     "owner": 12,
     "mrt_station": "Buona Vista",
     "check": "Projector, remote and cable checked",
@@ -600,26 +600,26 @@
     "source_page": "https://www.carousell.sg/tv-home-appliances/portable-projector/q-30/"
   },
   {
-    "slug": "switch",
-    "title": "Nintendo Switch console",
-    "description": "Switch console for a long weekend or a small games night. Includes the console and attached controllers as pictured. Games and extra controllers are not included. We will test the controls and agree on the accessories at pickup. Please sign out of your account before returning the console.",
+    "slug": "racing-wheel",
+    "title": "Logitech G29 racing wheel and pedals",
+    "description": "Force-feedback steering wheel and three-pedal set for a racing weekend or trying a sim setup. Includes power and USB leads. Bring your own compatible PlayStation or PC, game and sturdy desk or wheel stand. We can check steering and pedal input at pickup.",
     "category": "Electronics",
     "condition": "Good",
-    "price_day": "15",
-    "price_week": "60",
-    "price_month": "170",
-    "deposit": "250",
+    "price_day": "12",
+    "price_week": "42",
+    "price_month": null,
+    "deposit": "120",
     "owner": 13,
     "mrt_station": "Kovan",
-    "check": "Console and controllers tested",
+    "check": "Wheel clamp, pedals and cables checked",
     "status": "active",
     "photos": [
       {
-        "file": "switch-1.jpg",
-        "source_url": "https://media.karousell.com/media/photos/products/2026/8/23/nintendo_switch_1787477274_0da91c87_progressive.jpg"
+        "file": "racing-wheel-1.jpg",
+        "source_url": "https://media.karousell.com/media/photos/products/2026/2/19/logitech_g29_for_ps4_1771526297_f997f636_progressive.jpg"
       }
     ],
-    "source_page": "https://www.carousell.sg/p/nintendo-switch-1457231629/"
+    "source_page": "https://www.carousell.sg/p/logitech-g29-steering-wheel-pedals-for-ps4-ps5-1422379389/"
   },
   {
     "slug": "drone",
@@ -649,10 +649,10 @@
     "description": "Entry-level GoPro HERO for a simple outdoor recording setup. This is the older 2014 model, not a recent HERO Black. We will check the controls, case and included mounts at collection. Bring your own compatible memory card. Please rinse the outer case after use near salt water and dry it before return.",
     "category": "Electronics",
     "condition": "Good",
-    "price_day": "18",
-    "price_week": "75",
-    "price_month": "210",
-    "deposit": "250",
+    "price_day": "9",
+    "price_week": "30",
+    "price_month": "60",
+    "deposit": "75",
     "owner": 14,
     "mrt_station": "Pasir Ris",
     "check": "Camera and case checked",
@@ -775,10 +775,10 @@
     "description": "Steam iron for a short stay or a batch of event outfits. Lightly used and stored indoors. Ironing board is not included. Please check the garment care label and water instructions before use. We will check the cable and soleplate at pickup. Empty the tank and let it cool before return.",
     "category": "Home",
     "condition": "Good",
-    "price_day": "6",
-    "price_week": "24",
+    "price_day": "3",
+    "price_week": "10",
     "price_month": null,
-    "deposit": "60",
+    "deposit": "25",
     "owner": 16,
     "mrt_station": "Bukit Batok",
     "check": "Cable and soleplate checked",
@@ -938,5 +938,71 @@
       }
     ],
     "source_page": "https://www.carousell.sg/p/black-luggage-set-3-pieces-1400248708/"
+  },
+  {
+    "slug": "vacuum-cleaner",
+    "title": "Vacuum cleaner",
+    "description": "Easy to use vacuum for house work",
+    "category": "Home",
+    "condition": "Like new",
+    "price_day": "8.80",
+    "price_week": "44.00",
+    "price_month": "132.00",
+    "deposit": "106.00",
+    "owner": 20,
+    "mrt_station": "Clementi",
+    "check": "Power, hose and dust compartment checked",
+    "status": "active",
+    "photos": [
+      {
+        "file": "vacuum-cleaner-1.jpg",
+        "source_url": "https://d2qlmvfhlu3k82.cloudfront.net/media/listing/5b03f32a-5e66-44e5-bd0a-abbc1628ef22/0bd8c7ea-c8f3-4b99-a5de-31639f88e77a.png"
+      }
+    ],
+    "source_page": "https://d2qlmvfhlu3k82.cloudfront.net/listings/2115d534-16f4-4efa-b5a6-4844a3de5f61"
+  },
+  {
+    "slug": "toolbox",
+    "title": "Toolbox",
+    "description": "A full fledged toolbox to help any of your house work needs",
+    "category": "Tools",
+    "condition": "Like new",
+    "price_day": "10.00",
+    "price_week": "50.00",
+    "price_month": "150.00",
+    "deposit": "8.00",
+    "owner": 20,
+    "mrt_station": "Clementi",
+    "check": "Tool inventory and case latch checked",
+    "status": "active",
+    "photos": [
+      {
+        "file": "toolbox-1.jpg",
+        "source_url": "https://d2qlmvfhlu3k82.cloudfront.net/media/listing/5b03f32a-5e66-44e5-bd0a-abbc1628ef22/e99cb709-b3fc-4a80-89cc-59f0871fe5a9.png"
+      }
+    ],
+    "source_page": "https://d2qlmvfhlu3k82.cloudfront.net/listings/1a77439c-53f8-4f88-a7d7-6127e1346007"
+  },
+  {
+    "slug": "induction-cooktop",
+    "title": "Portable commercial induction cooktop",
+    "description": "Single-burner induction cooktop for a pop-up stall or an extra cooking station at an event. Bring induction-compatible cookware and confirm your venue has a suitable outlet before booking. We can test the controls at pickup. Please return the cooktop cool and wiped clean.",
+    "category": "Home",
+    "condition": "Good",
+    "price_day": "12",
+    "price_week": "40",
+    "price_month": null,
+    "deposit": "80",
+    "owner": 20,
+    "mrt_station": "Clementi",
+    "check": "Cooking surface, controls and power lead checked",
+    "status": "active",
+    "photos": [
+      {
+        "file": "induction-cooktop-1.jpg",
+        "source_url": "https://media.karousell.com/media/photos/products/2023/6/26/induction_cooker_for_commercia_1687760661_693b47e2_progressive"
+      }
+    ],
+    "source_page": "https://www.carousell.sg/p/induction-cooker-for-commercial-kitchen-1239582277/"
   }
 ]
